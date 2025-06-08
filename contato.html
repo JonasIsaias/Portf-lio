@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Contato - Jonas Isaias</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- AOS CSS -->
+  <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet" />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <canvas id="canvas" aria-hidden="true"></canvas>
+  <canvas id="stars" aria-hidden="true"></canvas>
+
+  <div class="container">
+    <nav class="menu">
+      <a href="index.html">Início</a>
+      <a href="sobre.html">Sobre mim</a>
+      <a href="projetos.html">Projetos</a>
+      <a href="contato.html">Contato</a>
+    </nav>
+
+    <section>
+        <p>Se você estiver interessado em discutir projetos ou colaborações, sinta-se à vontade para entrar em contato!</p>
+      <h2>Contato</h2>
+      <form id="form-contato">
+        <input type="text" name="nome" placeholder="Seu nome" required>
+        <input type="email" name="email" placeholder="Seu e-mail" required>
+        <textarea name="mensagem" rows="5" placeholder="Sua mensagem" required></textarea>
+        <button type="submit">Enviar</button>
+      </form>
+    </section>
+
+    <footer class="rodape">
+      <p>&copy; 2025 Jonas Isaias. Todos os direitos reservados.</p>
+      <div class="social-links">
+        <a href="https://linkedin.com/in/jonas-isaias-3a02ba293" target="_blank" rel="noopener" aria-label="LinkedIn">
+          <i class="fab fa-linkedin-in"></i>
+        </a>
+        <a href="https://github.com/JonasIsaias" target="_blank" rel="noopener" aria-label="GitHub">
+          <i class="fab fa-github"></i>
+        </a>
+      </div>
+    </footer>
+  </div>
+
+  <!-- AOS JS -->
+  <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+  <script>AOS.init();</script>
+
+  <!-- Scripts -->
+  <script src="js/particles.js"></script>
+  <script src="js/main.js"></script>
+  <script>
+    const form = document.getElementById("form-contato");
+        if (form) {
+            form.addEventListener("submit", (e) => {
+            e.preventDefault();
+            const botao = e.target.querySelector("button");
+            botao.disabled = true;
+            botao.textContent = "Enviando...";
+
+            setTimeout(() => {
+                alert("Mensagem enviada! (Simulação)");
+                e.target.reset();
+                botao.disabled = false;
+                botao.textContent = "Enviar";
+            }, 1500);
+            });
+        }
+  </script>
+</body>
+</html>

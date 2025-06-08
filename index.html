@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Portfólio Jonas Isaias</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- AOS CSS -->
+  <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet" />
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <canvas id="canvas" aria-hidden="true"></canvas>
+  <canvas id="stars" aria-hidden="true"></canvas>
+
+  <!-- Nebulosas -->
+  <img src="img/Orion_Nebula_-_Hubble_2006.jpg" class="nebulosa" alt="" />
+  <img src="img/Nebulosa1.jpg" class="nebulosa" alt="" />
+  <img src="img/Orion_Nebula_-_Hubble_2006.jpg" class="nebulosa" alt="" />
+
+  <div class="container">
+    <header class="hero">
+      <img src="img/foto-perfil.jpg" alt="Foto de Jonas Isaias" class="foto-perfil" />
+      <h1 class="texto-animado">
+        <span id="texto-animado"></span><span class="cursor">|</span>
+      </h1>
+
+      <a href="sobre.html" id="btn-saber-mais" class="botao-link">Saber mais</a>
+    </header>
+
+    <footer class="rodape">
+      <p>&copy; 2025 Jonas Isaias. Todos os direitos reservados.</p>
+      <div class="social-links">
+        <a href="https://linkedin.com/in/jonas-isaias-3a02ba293" target="_blank" rel="noopener" aria-label="LinkedIn">
+          <i class="fab fa-linkedin-in"></i>
+        </a>
+        <a href="https://github.com/JonasIsaias" target="_blank" rel="noopener" aria-label="GitHub">
+          <i class="fab fa-github"></i>
+        </a>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- AOS JS -->
+  <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+  <script>AOS.init();</script>
+
+  <!-- Scripts -->
+  <script src="js/particles.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
