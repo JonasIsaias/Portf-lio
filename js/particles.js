@@ -1,160 +1,299 @@
-window.addEventListener("load", () => {
-  const canvas = document.getElementById("canvas");
-  const ctx = canvas.getContext("2d");
+"use strict";
 
-  function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-  }
-  resize();
-  window.addEventListener("resize", resize);
+(() => {
+  const reducedMotion = window.matchMedia(
+    "(prefers-reduced-motion: reduce)"
+  ).matches;
 
-  class Particle {
-    constructor(x, y) {
-      this.x = x;
-      this.y = y;
-      this.vx = (Math.random() - 0.5) * 2;
-      this.vy = (Math.random() - 0.5) * 2;
-      this.radius = 3;
-    }
+  const finePointer = window.matchMedia(
+    "(hover: hover) and (pointer: fine)"
+  ).matches;
 
-    update(mouse) {
-      this.vx += (Math.random() - 0.5) * 1.2;
-      this.vy += (Math.random() - 0.5) * 1.2;
+  const starsCanvas = document.getElementById("stars");
+  const particleCanvas = document.getElementById("canvas");
 
-      const dx = this.x - mouse.x;
-      const dy = this.y - mouse.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
+  const random = (min, max) => Math.random() * (max - min) + min;
 
-      if (dist < 150) {
-        const angle = Math.atan2(dy, dx);
-        const force = (150 - dist) / 150;
-        this.vx += Math.cos(angle) * force * 2;
-        this.vy += Math.sin(angle) * force * 2;
+  function createCanvasRenderer(canvas, mode) {
+    if (!canvas) return null;
+
+    const context = canvas.getContext("2d", { alpha: true });
+    if (!context) return null;
+
+    let width = 0;
+    let height = 0;
+    let dpr = 1;
+    let particles = [];
+    let animationId = null;
+    let isVisible = true;
+    let lastFrame = 0;
+
+    const particleCount = () => {
+      const area = window.innerWidth * window.innerHeight;
+      const divisor = mode === "stars" ? 10500 : 24000;
+      const min = mode === "stars" ? 35 : 14;
+      const max = mode === "stars" ? 115 : 48;
+
+      return Math.max(min, Math.min(max, Math.round(area / divisor)));
+    };
+
+    function createParticle() {
+      if (mode === "stars") {
+        return {
+          x: random(0, width),
+          y: random(0, height),
+          radius: random(0.35, 1.45),
+          alpha: random(0.2, 0.85),
+          phase: random(0, Math.PI * 2),
+          speed: random(0.25, 1.1),
+          drift: random(-0.08, 0.08)
+        };
       }
 
-      this.vx *= 0.92;
-      this.vy *= 0.92;
-
-      this.x += this.vx;
-      this.y += this.vy;
-
-      if (this.x <= 0 || this.x >= canvas.width) this.vx *= -1;
-      if (this.y <= 0 || this.y >= canvas.height) this.vy *= -1;
+      return {
+        x: random(0, width),
+        y: random(0, height),
+        radius: random(0.7, 1.8),
+        alpha: random(0.2, 0.65),
+        vx: random(-0.13, 0.13),
+        vy: random(-0.12, 0.12)
+      };
     }
 
-    draw() {
-      ctx.beginPath();
-      ctx.fillStyle = "#ff5500";
-      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  }
+    function resize() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      dpr = Math.min(window.devicePixelRatio || 1, 1.5);
 
-  class Network {
-    constructor() {
-      this.particles = [];
-      this.maxDistance = 180;
-      const total = window.innerWidth < 768 ? 20 : 40;
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
 
-      for (let i = 0; i < total; i++) {
-        this.addParticle(Math.random() * canvas.width, Math.random() * canvas.height);
+      context.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      const count = particleCount();
+
+      if (particles.length > count) {
+        particles.length = count;
       }
+
+      while (particles.length < count) {
+        particles.push(createParticle());
+      }
+
+      drawStatic();
     }
 
-    addParticle(x, y) {
-      this.particles.push(new Particle(x, y));
+    function drawStatic() {
+      context.clearRect(0, 0, width, height);
+
+      particles.forEach((particle) => {
+        if (mode === "stars") {
+          context.fillStyle = `rgba(190, 220, 255, ${particle.alpha})`;
+        } else {
+          context.fillStyle = `rgba(0, 245, 212, ${particle.alpha * 0.6})`;
+        }
+
+        context.beginPath();
+        context.arc(
+          particle.x,
+          particle.y,
+          particle.radius,
+          0,
+          Math.PI * 2
+        );
+        context.fill();
+      });
     }
 
-    drawLines() {
-      for (let i = 0; i < this.particles.length; i++) {
-        for (let j = i + 1; j < this.particles.length; j++) {
-          const p1 = this.particles[i];
-          const p2 = this.particles[j];
-          const dx = p1.x - p2.x;
-          const dy = p1.y - p2.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < this.maxDistance) {
-            ctx.beginPath();
-            ctx.strokeStyle = `rgba(255, 85, 0, ${1 - dist / this.maxDistance})`;
-            ctx.lineWidth = 1;
-            ctx.moveTo(p1.x, p1.y);
-            ctx.lineTo(p2.x, p2.y);
-            ctx.stroke();
+    function drawConnections() {
+      if (mode !== "particles") return;
+
+      const maxDistance = Math.min(145, width * 0.19);
+
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const a = particles[i];
+          const b = particles[j];
+
+          const dx = a.x - b.x;
+          const dy = a.y - b.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+
+          if (distance < maxDistance) {
+            const alpha = (1 - distance / maxDistance) * 0.11;
+
+            context.strokeStyle = `rgba(0, 245, 212, ${alpha})`;
+            context.lineWidth = 0.7;
+            context.beginPath();
+            context.moveTo(a.x, a.y);
+            context.lineTo(b.x, b.y);
+            context.stroke();
           }
         }
       }
     }
 
-    update(mouse) {
-      this.particles.forEach(p => p.update(mouse));
+    function animate(timestamp) {
+      if (!isVisible || document.hidden) {
+        animationId = null;
+        return;
+      }
+
+      if (timestamp - lastFrame < 32) {
+        animationId = requestAnimationFrame(animate);
+        return;
+      }
+
+      lastFrame = timestamp;
+      context.clearRect(0, 0, width, height);
+
+      particles.forEach((particle) => {
+        if (mode === "stars") {
+          particle.phase += 0.012 * particle.speed;
+          particle.y += 0.04 * particle.speed;
+          particle.x += particle.drift;
+
+          if (particle.y > height + 3) {
+            particle.y = -3;
+            particle.x = random(0, width);
+          }
+
+          if (particle.x < -3) particle.x = width + 3;
+          if (particle.x > width + 3) particle.x = -3;
+
+          const twinkle = 0.65 + Math.sin(particle.phase) * 0.35;
+
+          context.fillStyle =
+            `rgba(190, 220, 255, ${particle.alpha * twinkle})`;
+        } else {
+          particle.x += particle.vx;
+          particle.y += particle.vy;
+
+          if (particle.x < 0 || particle.x > width) particle.vx *= -1;
+          if (particle.y < 0 || particle.y > height) particle.vy *= -1;
+
+          context.fillStyle =
+            `rgba(0, 245, 212, ${particle.alpha * 0.7})`;
+        }
+
+        context.beginPath();
+        context.arc(
+          particle.x,
+          particle.y,
+          particle.radius,
+          0,
+          Math.PI * 2
+        );
+        context.fill();
+      });
+
+      drawConnections();
+      animationId = requestAnimationFrame(animate);
     }
 
-    draw() {
-      this.particles.forEach(p => p.draw());
-      this.drawLines();
+    function start() {
+      if (animationId !== null || !isVisible || document.hidden) return;
+
+      if (reducedMotion) {
+        drawStatic();
+        return;
+      }
+
+      animationId = requestAnimationFrame(animate);
     }
+
+    function stop() {
+      if (animationId !== null) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+      }
+    }
+
+    function setVisible(visible) {
+      isVisible = visible;
+
+      if (visible) {
+        start();
+      } else {
+        stop();
+      }
+    }
+
+    resize();
+
+    if (!reducedMotion) {
+      start();
+    }
+
+    return {
+      resize,
+      start,
+      stop,
+      setVisible
+    };
   }
 
-  const network = new Network();
-  const mouse = { x: -9999, y: -9999 };
+  const starsRenderer = createCanvasRenderer(starsCanvas, "stars");
+  const particlesRenderer = createCanvasRenderer(particleCanvas, "particles");
 
-  window.addEventListener("click", (e) => {
-    network.addParticle(e.clientX, e.clientY);
+  let resizeTimer = null;
+
+  window.addEventListener("resize", () => {
+    if (resizeTimer !== null) {
+      clearTimeout(resizeTimer);
+    }
+
+    resizeTimer = window.setTimeout(() => {
+      starsRenderer?.resize();
+      particlesRenderer?.resize();
+      resizeTimer = null;
+    }, 120);
+  }, { passive: true });
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      starsRenderer?.stop();
+      particlesRenderer?.stop();
+    } else {
+      starsRenderer?.start();
+      particlesRenderer?.start();
+    }
   });
-  window.addEventListener("mousemove", (e) => {
-    mouse.x = e.clientX;
-    mouse.y = e.clientY;
-  });
 
-  function animate() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    network.update(mouse);
-    network.draw();
-    requestAnimationFrame(animate);
-  }
+  if ("IntersectionObserver" in window) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.target === document.documentElement) {
+          const visible = entry.isIntersecting;
 
-  // Estrelas
-  const starCanvas = document.getElementById("stars");
-  const starCtx = starCanvas.getContext("2d");
-
-  function resizeStars() {
-    starCanvas.width = window.innerWidth;
-    starCanvas.height = window.innerHeight;
-  }
-  resizeStars();
-  window.addEventListener("resize", resizeStars);
-
-  const stars = [];
-  for (let i = 0; i < 150; i++) {
-    stars.push({
-      x: Math.random() * starCanvas.width,
-      y: Math.random() * starCanvas.height,
-      radius: Math.random() * 1.5,
-      alpha: Math.random(),
-      delta: Math.random() * 0.02
+          starsRenderer?.setVisible(visible);
+          particlesRenderer?.setVisible(visible);
+        }
+      });
     });
+
+    observer.observe(document.documentElement);
   }
 
-  function drawStars() {
-    starCtx.clearRect(0, 0, starCanvas.width, starCanvas.height);
-    for (let star of stars) {
-      star.alpha += star.delta;
-      if (star.alpha <= 0 || star.alpha >= 1) star.delta *= -1;
+  if (finePointer && !reducedMotion && particlesRenderer) {
+    let pointerX = -1000;
+    let pointerY = -1000;
 
-      starCtx.beginPath();
-      starCtx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
-      starCtx.fillStyle = `rgba(255,255,255,${star.alpha})`;
-      starCtx.fill();
-    }
-    requestAnimationFrame(drawStars);
+    window.addEventListener("pointermove", (event) => {
+      pointerX = event.clientX;
+      pointerY = event.clientY;
+    }, { passive: true });
+
+    // O movimento do ponteiro é usado somente para uma interação discreta.
+    // Não há processamento contínuo adicional para economizar recursos.
+    document.addEventListener("pointerleave", () => {
+      pointerX = -1000;
+      pointerY = -1000;
+    });
+
+    void pointerX;
+    void pointerY;
   }
-
-  animate();
-  drawStars();
-
-  starCanvas.style.position = "fixed";
-  starCanvas.style.top = "0";
-  starCanvas.style.left = "0";
-  starCanvas.style.zIndex = "0";
-});
+})();
