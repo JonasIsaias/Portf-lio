@@ -1,299 +1,363 @@
 "use strict";
 
-(() => {
-  const reducedMotion = window.matchMedia(
+document.addEventListener("DOMContentLoaded", () => {
+  const $ = (selector, root = document) => root.querySelector(selector);
+  const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+
+  // Ano automático no rodapé.
+  $$(".current-year").forEach((element) => {
+    element.textContent = new Date().getFullYear();
+  });
+
+  // Menu responsivo.
+  const menuToggle = $("#menuToggle");
+  const siteNav = $("#siteNav");
+
+  function closeMenu() {
+    if (!menuToggle || !siteNav) return;
+
+    siteNav.classList.remove("is-open");
+    menuToggle.setAttribute("aria-expanded", "false");
+    menuToggle.setAttribute("aria-label", "Abrir menu");
+
+    const icon = $("i", menuToggle);
+    if (icon) icon.className = "fa-solid fa-bars";
+  }
+
+  if (menuToggle && siteNav) {
+    menuToggle.addEventListener("click", () => {
+      const isOpen = siteNav.classList.toggle("is-open");
+
+      menuToggle.setAttribute("aria-expanded", String(isOpen));
+      menuToggle.setAttribute(
+        "aria-label",
+        isOpen ? "Fechar menu" : "Abrir menu"
+      );
+
+      const icon = $("i", menuToggle);
+      if (icon) {
+        icon.className = isOpen
+          ? "fa-solid fa-xmark"
+          : "fa-solid fa-bars";
+      }
+    });
+
+    $$(".site-nav a", siteNav).forEach((link) => {
+      link.addEventListener("click", closeMenu);
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") closeMenu();
+    });
+
+    document.addEventListener("click", (event) => {
+      if (
+        siteNav.classList.contains("is-open") &&
+        !siteNav.contains(event.target) &&
+        !menuToggle.contains(event.target)
+      ) {
+        closeMenu();
+      }
+    });
+
+    window.addEventListener("resize", () => {
+      if (window.innerWidth > 760) closeMenu();
+    });
+  }
+
+  // Digitação automática na página inicial.
+  const typingElement = $("#texto-animado");
+
+  if (typingElement) {
+    const phrases = [
+      "Desenvolvedor de software.",
+      "Criando soluções com Python e Java.",
+      "Automatizando processos com código.",
+      "Transformando ideias em tecnologia."
+    ];
+
+    const reducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+
+    if (reducedMotion) {
+      typingElement.textContent = phrases[0];
+    } else {
+      let phraseIndex = 0;
+      let characterIndex = 0;
+      let deleting = false;
+      let timer = null;
+
+      function typePhrase() {
+        if (!typingElement.isConnected) return;
+
+        const phrase = phrases[phraseIndex];
+
+        if (!deleting) {
+          characterIndex++;
+          typingElement.textContent = phrase.slice(0, characterIndex);
+
+          if (characterIndex >= phrase.length) {
+            deleting = true;
+            timer = window.setTimeout(typePhrase, 1800);
+            return;
+          }
+        } else {
+          characterIndex--;
+          typingElement.textContent = phrase.slice(0, characterIndex);
+
+          if (characterIndex <= 0) {
+            deleting = false;
+            phraseIndex = (phraseIndex + 1) % phrases.length;
+            timer = window.setTimeout(typePhrase, 350);
+            return;
+          }
+        }
+
+        timer = window.setTimeout(typePhrase, deleting ? 28 : 65);
+      }
+
+      timer = window.setTimeout(typePhrase, 500);
+
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden && timer !== null) {
+          clearTimeout(timer);
+          timer = null;
+        } else if (!document.hidden && timer === null) {
+          timer = window.setTimeout(typePhrase, 400);
+        }
+      });
+    }
+  }
+
+  // Filtros da página de projetos.
+  const missionGrid = $("#missionGrid");
+  const filterButtons = $$(".filter-btn");
+
+  if (missionGrid && filterButtons.length) {
+    const cards = $$(".mission-card", missionGrid);
+    const resultsLabel = $("#resultsLabel");
+    const projectCount = $("#projectCount");
+    const emptyState = $("#emptyState");
+
+    function applyFilter(filter) {
+      let visibleCount = 0;
+
+      cards.forEach((card) => {
+        const categories = (card.dataset.category || "")
+          .toLowerCase()
+          .split(/\s+/)
+          .filter(Boolean);
+
+        const visible =
+          filter === "all" || categories.includes(filter);
+
+        card.classList.toggle("is-hidden", !visible);
+        card.setAttribute("aria-hidden", String(!visible));
+
+        if (visible) visibleCount++;
+      });
+
+      filterButtons.forEach((button) => {
+        const active = button.dataset.filter === filter;
+
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-pressed", String(active));
+      });
+
+      if (resultsLabel) {
+        resultsLabel.textContent = `${String(visibleCount).padStart(2, "0")} RESULTADOS`;
+      }
+
+      if (projectCount) {
+        projectCount.textContent = `${String(visibleCount).padStart(2, "0")} MISSÕES`;
+      }
+
+      if (emptyState) {
+        emptyState.hidden = visibleCount !== 0;
+      }
+    }
+
+    filterButtons.forEach((button) => {
+      button.setAttribute(
+        "aria-pressed",
+        String(button.classList.contains("active"))
+      );
+
+      button.addEventListener("click", () => {
+        applyFilter(button.dataset.filter || "all");
+      });
+    });
+
+    applyFilter("all");
+  }
+
+  // Contador de caracteres no formulário.
+  const messageField = $("#message");
+  const characterCount = $("#characterCount");
+
+  if (messageField && characterCount) {
+    const updateCharacterCount = () => {
+      characterCount.textContent = String(messageField.value.length);
+    };
+
+    messageField.addEventListener("input", updateCharacterCount);
+    updateCharacterCount();
+  }
+
+  
+  // Formulário: prepara uma mensagem para o aplicativo de e-mail.
+  const contactForm = $("#contactForm");
+  const formFeedback = $("#formFeedback");
+
+  if (contactForm) {
+    contactForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      if (!contactForm.reportValidity()) return;
+
+      const formData = new FormData(contactForm);
+
+      const name = String(formData.get("name") || "").trim();
+      const email = String(formData.get("email") || "").trim();
+      const subject = String(formData.get("subject") || "").trim();
+      const message = String(formData.get("message") || "").trim();
+
+      if (!name || !email || !subject || !message) {
+        if (formFeedback) {
+          formFeedback.textContent =
+            "Preencha todos os campos obrigatórios.";
+        }
+        return;
+      }
+
+      // E-mail que receberá a mensagem.
+      const recipient = "jonas.isaiasdev@gmail.com";
+
+      const emailSubject = `[Portfólio] ${subject}`;
+
+      const body = [
+        `Nome: ${name}`,
+        `E-mail para resposta: ${email}`,
+        "",
+        "Mensagem:",
+        message,
+        "",
+        "---",
+        "Enviado pelo portfólio de Jonas Isaias."
+      ].join("\n");
+
+      const mailto =
+        `mailto:${recipient}` +
+        `?subject=${encodeURIComponent(emailSubject)}` +
+        `&body=${encodeURIComponent(body)}`;
+
+      if (formFeedback) {
+        formFeedback.textContent =
+          "Abrindo seu aplicativo de e-mail. Revise a mensagem e clique em Enviar.";
+      }
+
+      window.location.href = mailto;
+    });
+  }
+
+  // Botões de retorno ao topo.
+  $$(".back-to-top").forEach((link) => {
+    link.addEventListener("click", (event) => {
+      event.preventDefault();
+      window.scrollTo({
+        top: 0,
+        behavior: window.matchMedia(
+          "(prefers-reduced-motion: reduce)"
+        ).matches ? "auto" : "smooth"
+      });
+    });
+  });
+
+  // Entrada suave dos elementos ao rolar a página.
+  const revealSelectors = [
+    ".project-card",
+    ".content-panel",
+    ".mission-card",
+    ".mission-counter",
+    ".intro-item",
+    ".terminal-window",
+    ".contact-method"
+  ];
+
+  const revealElements = $$(revealSelectors.join(","));
+
+  const canAnimate = !window.matchMedia(
     "(prefers-reduced-motion: reduce)"
   ).matches;
 
-  const finePointer = window.matchMedia(
+  if (canAnimate && "IntersectionObserver" in window) {
+    revealElements.forEach((element) => element.classList.add("reveal"));
+    document.body.classList.add("reveal-ready");
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("is-visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.08 }
+    );
+
+    revealElements.forEach((element) => observer.observe(element));
+  }
+
+  // Efeito de movimento sutil no desktop.
+  const heroVisual = $(".hero-visual");
+  const hasFinePointer = window.matchMedia(
     "(hover: hover) and (pointer: fine)"
   ).matches;
 
-  const starsCanvas = document.getElementById("stars");
-  const particleCanvas = document.getElementById("canvas");
+  if (heroVisual && hasFinePointer && canAnimate) {
+    heroVisual.addEventListener("mousemove", (event) => {
+      const rect = heroVisual.getBoundingClientRect();
 
-  const random = (min, max) => Math.random() * (max - min) + min;
+      const x = (event.clientX - rect.left) / rect.width - 0.5;
+      const y = (event.clientY - rect.top) / rect.height - 0.5;
 
-  function createCanvasRenderer(canvas, mode) {
-    if (!canvas) return null;
+      heroVisual.style.setProperty("--pointer-x", `${x * 8}px`);
+      heroVisual.style.setProperty("--pointer-y", `${y * 8}px`);
+    });
 
-    const context = canvas.getContext("2d", { alpha: true });
-    if (!context) return null;
-
-    let width = 0;
-    let height = 0;
-    let dpr = 1;
-    let particles = [];
-    let animationId = null;
-    let isVisible = true;
-    let lastFrame = 0;
-
-    const particleCount = () => {
-      const area = window.innerWidth * window.innerHeight;
-      const divisor = mode === "stars" ? 10500 : 24000;
-      const min = mode === "stars" ? 35 : 14;
-      const max = mode === "stars" ? 115 : 48;
-
-      return Math.max(min, Math.min(max, Math.round(area / divisor)));
-    };
-
-    function createParticle() {
-      if (mode === "stars") {
-        return {
-          x: random(0, width),
-          y: random(0, height),
-          radius: random(0.35, 1.45),
-          alpha: random(0.2, 0.85),
-          phase: random(0, Math.PI * 2),
-          speed: random(0.25, 1.1),
-          drift: random(-0.08, 0.08)
-        };
-      }
-
-      return {
-        x: random(0, width),
-        y: random(0, height),
-        radius: random(0.7, 1.8),
-        alpha: random(0.2, 0.65),
-        vx: random(-0.13, 0.13),
-        vy: random(-0.12, 0.12)
-      };
-    }
-
-    function resize() {
-      width = window.innerWidth;
-      height = window.innerHeight;
-      dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-
-      canvas.width = Math.floor(width * dpr);
-      canvas.height = Math.floor(height * dpr);
-      canvas.style.width = `${width}px`;
-      canvas.style.height = `${height}px`;
-
-      context.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-      const count = particleCount();
-
-      if (particles.length > count) {
-        particles.length = count;
-      }
-
-      while (particles.length < count) {
-        particles.push(createParticle());
-      }
-
-      drawStatic();
-    }
-
-    function drawStatic() {
-      context.clearRect(0, 0, width, height);
-
-      particles.forEach((particle) => {
-        if (mode === "stars") {
-          context.fillStyle = `rgba(190, 220, 255, ${particle.alpha})`;
-        } else {
-          context.fillStyle = `rgba(0, 245, 212, ${particle.alpha * 0.6})`;
-        }
-
-        context.beginPath();
-        context.arc(
-          particle.x,
-          particle.y,
-          particle.radius,
-          0,
-          Math.PI * 2
-        );
-        context.fill();
-      });
-    }
-
-    function drawConnections() {
-      if (mode !== "particles") return;
-
-      const maxDistance = Math.min(145, width * 0.19);
-
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const a = particles[i];
-          const b = particles[j];
-
-          const dx = a.x - b.x;
-          const dy = a.y - b.y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-
-          if (distance < maxDistance) {
-            const alpha = (1 - distance / maxDistance) * 0.11;
-
-            context.strokeStyle = `rgba(0, 245, 212, ${alpha})`;
-            context.lineWidth = 0.7;
-            context.beginPath();
-            context.moveTo(a.x, a.y);
-            context.lineTo(b.x, b.y);
-            context.stroke();
-          }
-        }
-      }
-    }
-
-    function animate(timestamp) {
-      if (!isVisible || document.hidden) {
-        animationId = null;
-        return;
-      }
-
-      if (timestamp - lastFrame < 32) {
-        animationId = requestAnimationFrame(animate);
-        return;
-      }
-
-      lastFrame = timestamp;
-      context.clearRect(0, 0, width, height);
-
-      particles.forEach((particle) => {
-        if (mode === "stars") {
-          particle.phase += 0.012 * particle.speed;
-          particle.y += 0.04 * particle.speed;
-          particle.x += particle.drift;
-
-          if (particle.y > height + 3) {
-            particle.y = -3;
-            particle.x = random(0, width);
-          }
-
-          if (particle.x < -3) particle.x = width + 3;
-          if (particle.x > width + 3) particle.x = -3;
-
-          const twinkle = 0.65 + Math.sin(particle.phase) * 0.35;
-
-          context.fillStyle =
-            `rgba(190, 220, 255, ${particle.alpha * twinkle})`;
-        } else {
-          particle.x += particle.vx;
-          particle.y += particle.vy;
-
-          if (particle.x < 0 || particle.x > width) particle.vx *= -1;
-          if (particle.y < 0 || particle.y > height) particle.vy *= -1;
-
-          context.fillStyle =
-            `rgba(0, 245, 212, ${particle.alpha * 0.7})`;
-        }
-
-        context.beginPath();
-        context.arc(
-          particle.x,
-          particle.y,
-          particle.radius,
-          0,
-          Math.PI * 2
-        );
-        context.fill();
-      });
-
-      drawConnections();
-      animationId = requestAnimationFrame(animate);
-    }
-
-    function start() {
-      if (animationId !== null || !isVisible || document.hidden) return;
-
-      if (reducedMotion) {
-        drawStatic();
-        return;
-      }
-
-      animationId = requestAnimationFrame(animate);
-    }
-
-    function stop() {
-      if (animationId !== null) {
-        cancelAnimationFrame(animationId);
-        animationId = null;
-      }
-    }
-
-    function setVisible(visible) {
-      isVisible = visible;
-
-      if (visible) {
-        start();
-      } else {
-        stop();
-      }
-    }
-
-    resize();
-
-    if (!reducedMotion) {
-      start();
-    }
-
-    return {
-      resize,
-      start,
-      stop,
-      setVisible
-    };
+    heroVisual.addEventListener("mouseleave", () => {
+      heroVisual.style.setProperty("--pointer-x", "0px");
+      heroVisual.style.setProperty("--pointer-y", "0px");
+    });
   }
 
-  const starsRenderer = createCanvasRenderer(starsCanvas, "stars");
-  const particlesRenderer = createCanvasRenderer(particleCanvas, "particles");
+  // A tela de inicialização existe apenas na página inicial.
+  const bootScreen = $("#bootScreen");
 
-  let resizeTimer = null;
+  if (bootScreen) {
+    const bootStatus = $("#bootStatus");
+    const reducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
 
-  window.addEventListener("resize", () => {
-    if (resizeTimer !== null) {
-      clearTimeout(resizeTimer);
-    }
-
-    resizeTimer = window.setTimeout(() => {
-      starsRenderer?.resize();
-      particlesRenderer?.resize();
-      resizeTimer = null;
-    }, 120);
-  }, { passive: true });
-
-  document.addEventListener("visibilitychange", () => {
-    if (document.hidden) {
-      starsRenderer?.stop();
-      particlesRenderer?.stop();
+    if (reducedMotion) {
+      bootScreen.remove();
     } else {
-      starsRenderer?.start();
-      particlesRenderer?.start();
+      if (bootStatus) bootStatus.textContent = "LOADING MODULES...";
+
+      window.setTimeout(() => {
+        if (bootStatus) bootStatus.textContent = "SYSTEM READY";
+      }, 650);
+
+      window.setTimeout(() => {
+        bootScreen.classList.add("is-done");
+
+        window.setTimeout(() => {
+          bootScreen.remove();
+        }, 600);
+      }, 1450);
     }
-  });
-
-  if ("IntersectionObserver" in window) {
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.target === document.documentElement) {
-          const visible = entry.isIntersecting;
-
-          starsRenderer?.setVisible(visible);
-          particlesRenderer?.setVisible(visible);
-        }
-      });
-    });
-
-    observer.observe(document.documentElement);
   }
-
-  if (finePointer && !reducedMotion && particlesRenderer) {
-    let pointerX = -1000;
-    let pointerY = -1000;
-
-    window.addEventListener("pointermove", (event) => {
-      pointerX = event.clientX;
-      pointerY = event.clientY;
-    }, { passive: true });
-
-    // O movimento do ponteiro é usado somente para uma interação discreta.
-    // Não há processamento contínuo adicional para economizar recursos.
-    document.addEventListener("pointerleave", () => {
-      pointerX = -1000;
-      pointerY = -1000;
-    });
-
-    void pointerX;
-    void pointerY;
-  }
-})();
+});
