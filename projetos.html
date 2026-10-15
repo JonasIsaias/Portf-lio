@@ -1,51 +1,219 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Projetos - Jonas Isaias</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090b14">
+  <meta name="description" content="Explore projetos de desenvolvimento, automação, análise de dados e aplicações web de Jonas Isaias.">
+  <title>Projetos | Jonas Isaias</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800&family=Share+Tech+Mono&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <!-- AOS CSS -->
-  <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet" />
-
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <canvas id="canvas" aria-hidden="true"></canvas>
   <canvas id="stars" aria-hidden="true"></canvas>
+  <canvas id="canvas" aria-hidden="true"></canvas>
+  <div class="scanlines" aria-hidden="true"></div>
+  <div class="screen-vignette" aria-hidden="true"></div>
 
-  <div class="container">
-    <nav class="menu">
-      <a href="index.html">Início</a>
-      <a href="sobre.html">Sobre mim</a>
-      <a href="projetos.html">Projetos</a>
-      <a href="contato.html">Contato</a>
+  <header class="site-header">
+    <a class="brand" href="index.html" aria-label="Jonas Isaias, início">
+      <span class="brand-icon">JI<span>_</span></span>
+      <span class="brand-name">JONAS<span>ISAIAS</span></span>
+    </a>
+    <button class="menu-toggle" id="menuToggle" aria-label="Abrir menu" aria-expanded="false">
+      <i class="fa-solid fa-bars"></i>
+    </button>
+    <nav class="site-nav" id="siteNav" aria-label="Navegação principal">
+      <a href="index.html"><span>00.</span> INÍCIO</a>
+      <a href="sobre.html"><span>01.</span> SOBRE</a>
+      <a href="projetos.html" class="active"><span>02.</span> PROJETOS</a>
+      <a href="contato.html"><span>03.</span> CONTATO</a>
     </nav>
+    <button class="sound-toggle" id="soundToggle" type="button" aria-pressed="false">
+      <i class="fa-solid fa-volume-xmark"></i><span>SOM OFF</span>
+    </button>
+  </header>
 
-    <section>
-      <h2>Projetos</h2>
-      <div id="projetos-container" class="galeria"></div>
+  <main class="inner-page section-shell">
+    <section class="page-hero">
+      <p class="eyebrow"><span class="heading-symbol">[</span> MISSION SELECT <span class="heading-symbol">]</span></p>
+      <h1>Projetos <span class="text-gradient"> & missões.</span></h1>
+      <p class="page-lead">Cada projeto é uma oportunidade de experimentar, aprender e transformar problemas em soluções.</p>
+      <div class="breadcrumb"><a href="index.html">INÍCIO</a><span>/</span><span>PROJETOS</span></div>
     </section>
 
-    <footer class="rodape">
-      <p>&copy; 2025 Jonas Isaias. Todos os direitos reservados.</p>
-      <div class="social-links">
-        <a href="https://linkedin.com/in/jonas-isaias-3a02ba293" target="_blank" rel="noopener" aria-label="LinkedIn">
-          <i class="fab fa-linkedin-in"></i>
-        </a>
-        <a href="https://github.com/JonasIsaias" target="_blank" rel="noopener" aria-label="GitHub">
-          <i class="fab fa-github"></i>
-        </a>
+    <section class="mission-dashboard">
+      <div class="mission-counter">
+        <div class="counter-icon"><i class="fa-solid fa-cube"></i></div>
+        <div><span class="micro-label">DATABASE</span><strong id="projectCount">06 MISSÕES</strong></div>
       </div>
-    </footer>
-  </div>
+      <div class="mission-counter">
+        <div class="counter-icon purple"><i class="fa-solid fa-layer-group"></i></div>
+        <div><span class="micro-label">CATEGORIAS</span><strong>04 CATEGORIAS</strong></div>
+      </div>
+      <div class="mission-counter">
+        <div class="counter-icon lime"><i class="fa-solid fa-code-branch"></i></div>
+        <div><span class="micro-label">MODO</span><strong>EXPLORATION</strong></div>
+      </div>
+    </section>
 
-  <!-- AOS JS -->
-  <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
-  <script>AOS.init();</script>
+    <section class="mission-section">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">SELECT YOUR DESTINATION</p>
+          <h2>Central de <span class="text-gradient">missões</span></h2>
+        </div>
+        <span class="results-label"><span class="status-dot"></span> <span id="resultsLabel">06 RESULTADOS</span></span>
+      </div>
 
-  <!-- Scripts -->
-  <script src="js/particles.js"></script>
-  <script src="js/carregarProjeto.js"></script>
+      <div class="filter-bar" role="group" aria-label="Filtrar projetos">
+        <button class="filter-btn active" type="button" data-filter="all">TODOS <span>06</span></button>
+        <button class="filter-btn" type="button" data-filter="python">PYTHON</button>
+        <button class="filter-btn" type="button" data-filter="web">WEB</button>
+        <button class="filter-btn" type="button" data-filter="java">JAVA</button>
+        <button class="filter-btn" type="button" data-filter="data">DADOS</button>
+      </div>
+
+      <div class="mission-grid" id="missionGrid">
+        <article class="mission-card" data-category="python web">
+          <div class="mission-visual visual-python">
+            <span class="mission-visual-label">AUTOMATION SYSTEM</span>
+            <i class="fa-solid fa-gears mission-visual-icon"></i>
+            <span class="mission-number">01</span>
+          </div>
+          <div class="mission-body">
+            <div class="mission-meta"><span>MISSION_001</span><span class="mission-type">AUTOMAÇÃO</span></div>
+            <h3>Automação de processos</h3>
+            <p>Scripts e ferramentas para reduzir tarefas repetitivas, padronizar operações e melhorar a eficiência de processos.</p>
+            <div class="project-tags"><span>PYTHON</span><span>INTEGRAÇÃO</span></div>
+            <div class="mission-footer">
+              <span class="mission-status"><i class="fa-solid fa-circle-check"></i> CONCEITO</span>
+              <a href="contato.html" class="mission-link">SAIBA MAIS <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+          </div>
+        </article>
+
+        <article class="mission-card" data-category="python data">
+          <div class="mission-visual visual-data">
+            <span class="mission-visual-label">ANALYTICS CORE</span>
+            <i class="fa-solid fa-chart-line mission-visual-icon"></i>
+            <span class="mission-number">02</span>
+          </div>
+          <div class="mission-body">
+            <div class="mission-meta"><span>MISSION_002</span><span class="mission-type">DADOS</span></div>
+            <h3>Dashboard analítico</h3>
+            <p>Visualização de indicadores, organização de informações e acompanhamento de dados para apoiar decisões.</p>
+            <div class="project-tags"><span>PYTHON</span><span>DATA</span><span>CHARTS</span></div>
+            <div class="mission-footer">
+              <span class="mission-status"><i class="fa-solid fa-circle-check"></i> CONCEITO</span>
+              <a href="contato.html" class="mission-link">SAIBA MAIS <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+          </div>
+        </article>
+
+        <article class="mission-card" data-category="web python">
+          <div class="mission-visual visual-web">
+            <span class="mission-visual-label">WEB APPLICATION</span>
+            <i class="fa-solid fa-laptop-code mission-visual-icon"></i>
+            <span class="mission-number">03</span>
+          </div>
+          <div class="mission-body">
+            <div class="mission-meta"><span>MISSION_003</span><span class="mission-type">WEB</span></div>
+            <h3>Aplicações web</h3>
+            <p>Aplicações com interfaces responsivas, navegação intuitiva e recursos que atendem a necessidades práticas.</p>
+            <div class="project-tags"><span>HTML</span><span>CSS</span><span>JAVASCRIPT</span></div>
+            <div class="mission-footer">
+              <span class="mission-status"><i class="fa-solid fa-circle-check"></i> CONCEITO</span>
+              <a href="contato.html" class="mission-link">SAIBA MAIS <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+          </div>
+        </article>
+
+        <article class="mission-card" data-category="python">
+          <div class="mission-visual visual-bot">
+            <span class="mission-visual-label">INTERACTION PROTOCOL</span>
+            <i class="fa-solid fa-robot mission-visual-icon"></i>
+            <span class="mission-number">04</span>
+          </div>
+          <div class="mission-body">
+            <div class="mission-meta"><span>MISSION_004</span><span class="mission-type">CHATBOTS</span></div>
+            <h3>Assistentes digitais</h3>
+            <p>Experiências conversacionais para organizar solicitações, orientar usuários e facilitar o acesso a informações.</p>
+            <div class="project-tags"><span>PYTHON</span><span>FLASK</span><span>CHATBOT</span></div>
+            <div class="mission-footer">
+              <span class="mission-status"><i class="fa-solid fa-circle-check"></i> CONCEITO</span>
+              <a href="contato.html" class="mission-link">SAIBA MAIS <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+          </div>
+        </article>
+
+        <article class="mission-card" data-category="java">
+          <div class="mission-visual visual-java">
+            <span class="mission-visual-label">OBJECT ENGINE</span>
+            <i class="fa-brands fa-java mission-visual-icon"></i>
+            <span class="mission-number">05</span>
+          </div>
+          <div class="mission-body">
+            <div class="mission-meta"><span>MISSION_005</span><span class="mission-type">SOFTWARE</span></div>
+            <h3>Aplicações em Java</h3>
+            <p>Projetos focados em lógica, organização de código e construção de funcionalidades reutilizáveis.</p>
+            <div class="project-tags"><span>JAVA</span><span>OOP</span></div>
+            <div class="mission-footer">
+              <span class="mission-status"><i class="fa-solid fa-circle-check"></i> CONCEITO</span>
+              <a href="contato.html" class="mission-link">SAIBA MAIS <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+          </div>
+        </article>
+
+        <article class="mission-card" data-category="web data">
+          <div class="mission-visual visual-interface">
+            <span class="mission-visual-label">VISUAL EXPERIENCE</span>
+            <i class="fa-solid fa-display mission-visual-icon"></i>
+            <span class="mission-number">06</span>
+          </div>
+          <div class="mission-body">
+            <div class="mission-meta"><span>MISSION_006</span><span class="mission-type">INTERFACE</span></div>
+            <h3>Experiências interativas</h3>
+            <p>Interfaces com animações, componentes visuais e interações que tornam informações mais acessíveis.</p>
+            <div class="project-tags"><span>HTML</span><span>CSS</span><span>JAVASCRIPT</span></div>
+            <div class="mission-footer">
+              <span class="mission-status"><i class="fa-solid fa-circle-check"></i> CONCEITO</span>
+              <a href="contato.html" class="mission-link">SAIBA MAIS <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <div class="empty-state" id="emptyState" hidden>
+        <i class="fa-solid fa-ghost"></i>
+        <h3>Nenhuma missão encontrada</h3>
+        <p>Tente selecionar outra categoria.</p>
+      </div>
+    </section>
+
+    <section class="contact-cta">
+      <p class="eyebrow">HAVE A MISSION FOR ME?</p>
+      <h2>Sua ideia pode ser a próxima <span class="text-gradient">missão.</span></h2>
+      <p>Vamos conversar sobre um projeto, uma oportunidade ou um desafio tecnológico.</p>
+      <a href="contato.html" class="btn btn-primary sound-action"><i class="fa-regular fa-paper-plane"></i> INICIAR CONEXÃO</a>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <a class="footer-brand" href="index.html">JI<span>_</span></a>
+    <p>© <span class="current-year">2026</span> JONAS ISAIAS. TODOS OS DIREITOS RESERVADOS.</p>
+    <div class="footer-socials">
+      <a href="https://github.com/JonasIsaias" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><i class="fa-brands fa-github"></i></a>
+      <a href="https://linkedin.com/in/jonas-isaias-3a02ba293" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+      <a href="#" class="back-to-top" aria-label="Voltar ao topo"><i class="fa-solid fa-arrow-up"></i></a>
+    </div>
+  </footer>
+
+  <script src="js/particles.js" defer></script>
+  <script src="js/effects.js" defer></script>
+  <script src="js/main.js" defer></script>
 </body>
 </html>
