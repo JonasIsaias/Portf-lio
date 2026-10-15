@@ -1,72 +1,171 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Sobre Jonas Isaias</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090b14">
+  <meta name="description" content="Conheça Jonas Isaias, sua trajetória, habilidades e visão sobre desenvolvimento de software.">
+  <title>Sobre | Jonas Isaias</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800&family=Share+Tech+Mono&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-  <!-- AOS CSS -->
-  <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet" />
-
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <canvas id="canvas" aria-hidden="true"></canvas>
   <canvas id="stars" aria-hidden="true"></canvas>
+  <canvas id="canvas" aria-hidden="true"></canvas>
+  <div class="scanlines" aria-hidden="true"></div>
+  <div class="screen-vignette" aria-hidden="true"></div>
 
-  <div class="container">
-    <nav class="menu">
-      <a href="index.html">Início</a>
-      <a href="sobre.html">Sobre mim</a>
-      <a href="projetos.html">Projetos</a>
-      <a href="contato.html">Contato</a>
+  <header class="site-header">
+    <a class="brand" href="index.html" aria-label="Jonas Isaias, início">
+      <span class="brand-icon">JI<span>_</span></span>
+      <span class="brand-name">JONAS<span>ISAIAS</span></span>
+    </a>
+    <button class="menu-toggle" id="menuToggle" aria-label="Abrir menu" aria-expanded="false">
+      <i class="fa-solid fa-bars"></i>
+    </button>
+    <nav class="site-nav" id="siteNav" aria-label="Navegação principal">
+      <a href="index.html"><span>00.</span> INÍCIO</a>
+      <a href="sobre.html" class="active"><span>01.</span> SOBRE</a>
+      <a href="projetos.html"><span>02.</span> PROJETOS</a>
+      <a href="contato.html"><span>03.</span> CONTATO</a>
     </nav>
+    <button class="sound-toggle" id="soundToggle" type="button" aria-pressed="false">
+      <i class="fa-solid fa-volume-xmark"></i><span>SOM OFF</span>
+    </button>
+  </header>
 
-    <section>
-      <h2>Sobre mim</h2>
-      <p>Sou Jonas Isaias, um desenvolvedor apaixonado por tecnologia e criação de soluções inovadoras. Com experiência em linguagens de programação, como JavaScript, Python e php, busco sempre aprimorar minhas habilidades e me manter atualizado com as últimas tendências do mercado.</p>
-      <p>Minha jornada na programação começou em 2022 no curso técnico em informatica, e desde então tenho trabalhado em projetos pessoais que vão desde análise de dados, automação, criação de bots e aplicativos web, sites responsivos, etc.</p>
-      <p>Acredito que o desenvolvimento vai além da codificação: trata-se de entender as necessidades dos usuários e criar experiências intuitivas e funcionais. Estou sempre aberto a aprender e colaborar, buscando não apenas a perfeição técnica, mas também a construção de um ambiente de trabalho positivo e criativo.</p>
+  <main class="inner-page section-shell">
+    <section class="page-hero">
+      <p class="eyebrow"><span class="heading-symbol">[</span> PLAYER PROFILE <span class="heading-symbol">]</span></p>
+      <h1>Sobre <span class="text-gradient">mim.</span></h1>
+      <p class="page-lead">Uma jornada de curiosidade, aprendizado e construção de soluções através da tecnologia.</p>
+      <div class="breadcrumb"><a href="index.html">INÍCIO</a><span>/</span><span>SOBRE</span></div>
     </section>
 
-    <section class="habilidades">
-            <h3>Minhas Habilidades</h3>
-            <ul>
-                <li>JavaScript</li>
-                <li>Python</li>
-                <li>CSS3</li>
-                <li>Java</li>
-                <li>HTML5</li>
-            </ul>
-        </section>
+    <section class="about-layout">
+      <aside class="about-sidebar">
+        <div class="profile-mini-card">
+          <div class="mini-avatar">
+            <img src="img/foto-perfil.jpg" alt="Foto de Jonas Isaias"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+            <div class="mini-avatar-fallback">JI<span>_</span></div>
+          </div>
+          <p class="micro-label">PLAYER IDENTIFIED</p>
+          <h2>Jonas Isaias</h2>
+          <p class="muted-text">Desenvolvimento de software</p>
+          <div class="profile-status"><span class="status-dot"></span> EM CONSTANTE EVOLUÇÃO</div>
+          <div class="mini-card-line"></div>
+          <div class="mini-data"><span>CLASSE</span><strong>DEVELOPER</strong></div>
+          <div class="mini-data"><span>FOCO</span><strong>PROBLEM SOLVING</strong></div>
+          <div class="mini-data"><span>MODE</span><strong>LEARNING</strong></div>
+        </div>
+      </aside>
 
-        <section class="depoimentos">
-            <h3>Depoimentos</h3>
-            <blockquote>
-                <p>"Como meu Analista de Processos PL, me ajudou bastante com análise de dados e automação de alguns processos, facilitando e melhorando a rotina dentro da empresa e setor"</p>
-                <cite>- Paulo Fiuza (Coordenador de Atendimento Hapvida NotreDame).</cite>
-            </blockquote>
-        </section>
+      <div class="about-main">
+        <article class="content-panel">
+          <div class="panel-heading"><span>01 // ORIGIN STORY</span><i class="fa-solid fa-fingerprint"></i></div>
+          <h2>Mais do que escrever código.</h2>
+          <p>Sou Jonas Isaias, desenvolvedor apaixonado por tecnologia e pela criação de soluções que tornam processos mais simples, eficientes e intuitivos.</p>
+          <p>Minha jornada na programação começou em 2022, durante o curso técnico em Informática. Desde então, venho ampliando meus conhecimentos por meio de projetos pessoais e desafios que envolvem desenvolvimento web, automação, análise de dados e criação de ferramentas digitais.</p>
+          <p>Gosto de entender o problema antes de pensar na solução. Para mim, desenvolver software não é apenas fazer algo funcionar: é construir algo útil, sustentável e que realmente facilite a vida de quem utiliza.</p>
+        </article>
 
-    <footer class="rodape">
-      <p>&copy; 2025 Jonas Isaias. Todos os direitos reservados.</p>
-      <div class="social-links">
-        <a href="https://linkedin.com/in/jonas-isaias-3a02ba293" target="_blank" rel="noopener" aria-label="LinkedIn">
-          <i class="fab fa-linkedin-in"></i>
-        </a>
-        <a href="https://github.com/JonasIsaias" target="_blank" rel="noopener" aria-label="GitHub">
-          <i class="fab fa-github"></i>
-        </a>
+        <article class="content-panel">
+          <div class="panel-heading"><span>02 // SKILL TREE</span><i class="fa-solid fa-code"></i></div>
+          <h2>Habilidades & tecnologias</h2>
+          <p class="muted-text">Ferramentas que fazem parte do meu universo de desenvolvimento.</p>
+
+          <div class="skill-tree">
+            <div class="skill-row">
+              <div class="skill-icon python-icon"><i class="fa-brands fa-python"></i></div>
+              <div class="skill-details"><strong>Python</strong><span>Automação, scripts e aplicações</span></div>
+              <span class="skill-type">BACKEND</span>
+            </div>
+            <div class="skill-row">
+              <div class="skill-icon java-icon"><i class="fa-brands fa-java"></i></div>
+              <div class="skill-details"><strong>Java</strong><span>Lógica e desenvolvimento de software</span></div>
+              <span class="skill-type">BACKEND</span>
+            </div>
+            <div class="skill-row">
+              <div class="skill-icon js-icon"><i class="fa-brands fa-js"></i></div>
+              <div class="skill-details"><strong>JavaScript</strong><span>Interatividade e aplicações web</span></div>
+              <span class="skill-type">FRONTEND</span>
+            </div>
+            <div class="skill-row">
+              <div class="skill-icon html-icon"><i class="fa-brands fa-html5"></i></div>
+              <div class="skill-details"><strong>HTML5 & CSS3</strong><span>Interfaces responsivas e experiências digitais</span></div>
+              <span class="skill-type">WEB</span>
+            </div>
+            <div class="skill-row">
+              <div class="skill-icon sql-icon"><i class="fa-solid fa-database"></i></div>
+              <div class="skill-details"><strong>Banco de dados</strong><span>Estruturação e consulta de informações</span></div>
+              <span class="skill-type">DATA</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="content-panel">
+          <div class="panel-heading"><span>03 // DEVELOPMENT LOG</span><i class="fa-solid fa-timeline"></i></div>
+          <h2>Minha jornada</h2>
+          <div class="timeline">
+            <div class="timeline-item">
+              <span class="timeline-point"></span>
+              <span class="timeline-date">2022</span>
+              <h3>Início da jornada</h3>
+              <p>Primeiros passos na programação durante o curso técnico em Informática, construindo a base de lógica e desenvolvimento.</p>
+            </div>
+            <div class="timeline-item">
+              <span class="timeline-point"></span>
+              <span class="timeline-date">EVOLUÇÃO CONTÍNUA</span>
+              <h3>Projetos e experimentação</h3>
+              <p>Desenvolvimento de aplicações, automações e ferramentas digitais para explorar tecnologias e solucionar problemas práticos.</p>
+            </div>
+            <div class="timeline-item">
+              <span class="timeline-point"></span>
+              <span class="timeline-date">PRÓXIMA FASE</span>
+              <h3>Aprender, aprimorar, construir</h3>
+              <p>Continuar evoluindo tecnicamente, colaborar em novos desafios e desenvolver soluções com impacto real.</p>
+            </div>
+          </div>
+        </article>
+
+        <article class="content-panel testimonial-panel">
+          <div class="panel-heading"><span>04 // FEEDBACK RECEIVED</span><i class="fa-solid fa-quote-right"></i></div>
+          <blockquote>
+            <p>“Como meu Analista de Processos PL, me ajudou bastante com análise de dados e automação de alguns processos, facilitando e melhorando a rotina dentro da empresa e setor.”</p>
+            <footer>
+              <span class="quote-avatar"><i class="fa-solid fa-user"></i></span>
+              <span><strong>Paulo Fiuza</strong><small>Coordenador de Atendimento — Hapvida NotreDame</small></span>
+            </footer>
+          </blockquote>
+        </article>
       </div>
-    </footer>
-  </div>
+    </section>
 
-  <!-- AOS JS -->
-  <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
-  <script>AOS.init();</script>
+    <section class="contact-cta">
+      <p class="eyebrow">END OF FILE // BEGIN NEW CHALLENGE</p>
+      <h2>Vamos construir algo <span class="text-gradient">incrível?</span></h2>
+      <a href="projetos.html" class="btn btn-outline sound-action">VER PROJETOS <i class="fa-solid fa-arrow-right"></i></a>
+      <a href="contato.html" class="btn btn-primary sound-action">ENTRAR EM CONTATO <i class="fa-regular fa-paper-plane"></i></a>
+    </section>
+  </main>
 
-  <!-- Scripts -->
-  <script src="js/particles.js"></script>
+  <footer class="site-footer">
+    <a class="footer-brand" href="index.html">JI<span>_</span></a>
+    <p>© <span class="current-year">2026</span> JONAS ISAIAS. TODOS OS DIREITOS RESERVADOS.</p>
+    <div class="footer-socials">
+      <a href="https://github.com/JonasIsaias" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><i class="fa-brands fa-github"></i></a>
+      <a href="https://linkedin.com/in/jonas-isaias-3a02ba293" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+      <a href="#" class="back-to-top" aria-label="Voltar ao topo"><i class="fa-solid fa-arrow-up"></i></a>
+    </div>
+  </footer>
+
+  <script src="js/particles.js" defer></script>
+  <script src="js/effects.js" defer></script>
+  <script src="js/main.js" defer></script>
 </body>
 </html>
