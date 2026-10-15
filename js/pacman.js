@@ -21,11 +21,12 @@
       const GHOST_SPEED = 76;
       const PLAYER_RADIUS = 12;
       const GHOST_RADIUS = 12;
+      const TURN_TOLERANCE = 7;
 
       const DIRECTIONS = {
-        ArrowUp:    { x: 0, y: -1 },
-        ArrowDown:  { x: 0, y: 1 },
-        ArrowLeft:  { x: -1, y: 0 },
+        ArrowUp: { x: 0, y: -1 },
+        ArrowDown: { x: 0, y: 1 },
+        ArrowLeft: { x: -1, y: 0 },
         ArrowRight: { x: 1, y: 0 }
       };
 
@@ -73,7 +74,7 @@
             api.sound(name);
           }
         } catch (_) {
-          // O jogo continua mesmo se o áudio falhar.
+          // O áudio não pode interromper o jogo.
         }
       }
 
@@ -99,8 +100,11 @@
         if (over) return;
 
         over = true;
-        player.dir = { x: 0, y: 0 };
-        player.next = { x: 0, y: 0 };
+
+        if (player) {
+          player.dir = { x: 0, y: 0 };
+          player.next = { x: 0, y: 0 };
+        }
 
         if (api && typeof api.end === "function") {
           api.end(message);
@@ -140,7 +144,6 @@
         );
       }
 
-      // Verifica a posição dos quatro cantos do personagem.
       function isWalkable(x, y, radius) {
         const points = [
           [x - radius, y - radius],
@@ -155,7 +158,7 @@
         });
       }
 
-      function nearTileCenter(entity, tolerance = 6) {
+      function nearTileCenter(entity, tolerance = TURN_TOLERANCE) {
         const tile = tileAt(entity.x, entity.y);
         const center = centerOf(tile.x, tile.y);
 
@@ -199,7 +202,7 @@
           walls.add(keyOf(COLS - 1, y));
         }
 
-        // Paredes internas. Os corredores permanecem conectados.
+        // Paredes internas.
         addHorizontalWall(3, 2, 6);
         addHorizontalWall(3, 9, 10);
         addHorizontalWall(3, 13, 17);
@@ -227,7 +230,7 @@
         addVerticalWall(13, 6, 8);
         addVerticalWall(17, 12, 13);
 
-        // Garante que as posições iniciais estejam livres.
+        // Posições iniciais livres.
         [
           [1, 1],
           [18, 1],
@@ -239,13 +242,11 @@
           walls.delete(keyOf(x, y));
         });
 
-        // Distribui os pontos por todas as células livres.
+        // Distribui os pontos pelas células livres.
         for (let y = 1; y < ROWS - 1; y++) {
           for (let x = 1; x < COLS - 1; x++) {
             if (isWall(x, y)) continue;
 
-            // Evita colocar pontos dentro da área inicial
-            // dos fantasmas.
             const ghostSpawn =
               (x === 18 && y === 1) ||
               (x === 1 && y === 13) ||
@@ -257,7 +258,7 @@
           }
         }
 
-        // Superpontos nos quatro cantos acessíveis.
+        // Superpontos.
         [
           [1, 1],
           [18, 1],
@@ -328,6 +329,7 @@
         over = false;
 
         buildMap();
+
         player = createPlayer();
         createGhosts();
 
@@ -338,57 +340,38 @@
 
       // =========================================================
       // CONTROLES DE TECLADO
+      // O arcade.js envia os comandos das setas do celular
+      // como eventos de teclado para a janela.
       // =========================================================
       function onKey(event) {
-        const keyName = event.key.toLowerCase();
+        const rawKey = String(event.key || "").toLowerCase();
 
         const keyDirections = {
           arrowup: DIRECTIONS.ArrowUp,
           arrowdown: DIRECTIONS.ArrowDown,
           arrowleft: DIRECTIONS.ArrowLeft,
           arrowright: DIRECTIONS.ArrowRight,
+
           w: DIRECTIONS.ArrowUp,
           s: DIRECTIONS.ArrowDown,
           a: DIRECTIONS.ArrowLeft,
           d: DIRECTIONS.ArrowRight
         };
 
-        const direction = keyDirections[keyName];
+        const direction = keyDirections[rawKey];
 
         if (!direction) return;
 
-        // Impede que as setas rolem a página.
+        // Evita a rolagem da página pelas setas.
         event.preventDefault();
 
         if (over || paused || destroyed || !player) {
           return;
         }
 
-        // A direção fica armazenada até ser possível
-        // realizar a curva no labirinto.
+        // Armazena a próxima direção. A curva será realizada
+        // assim que o personagem puder alinhar-se ao corredor.
         player.next = { ...direction };
-      }
-
-      // =========================================================
-      // CONTROLES DE TOQUE
-      // =========================================================
-      const touchButtons = document.querySelectorAll(
-        ".touch-controls [data-key]"
-      );
-
-      function onTouchControl(event) {
-        event.preventDefault();
-
-        if (over || paused || destroyed || !player) {
-          return;
-        }
-
-        const keyName = event.currentTarget.dataset.key;
-        const direction = DIRECTIONS[keyName];
-
-        if (direction) {
-          player.next = { ...direction };
-        }
       }
 
       // =========================================================
@@ -417,6 +400,7 @@
 
         if (dots.size === 0 && powerDots.size === 0) {
           level++;
+
           updateLevel();
           safeSound("clear");
 
@@ -434,20 +418,19 @@
       // MOVIMENTAÇÃO DO PAC-MAN
       // =========================================================
       function movePlayer(dt) {
-        // Divide o deslocamento em pequenos passos para evitar
-        // atravessar paredes ou perder o centro de uma célula.
         const distance = player.speed * dt;
         const steps = Math.max(1, Math.ceil(distance / 2));
         const stepDt = dt / steps;
 
         for (let step = 0; step < steps; step++) {
-          const info = nearTileCenter(player, 6);
+          const info = nearTileCenter(player);
 
           if (info.near) {
+            // Alinha precisamente ao centro da célula.
             player.x = info.center.x;
             player.y = info.center.y;
 
-            // Primeiro tenta realizar a direção solicitada.
+            // Prioriza a direção solicitada pelo usuário.
             if (
               canMoveFromTile(
                 info.tile.x,
@@ -458,7 +441,8 @@
               player.dir = { ...player.next };
             }
 
-            // Se a direção atual estiver bloqueada, para.
+            // Se não for possível continuar na direção atual,
+            // para e aguarda um novo comando.
             if (
               !canMoveFromTile(
                 info.tile.x,
@@ -476,6 +460,7 @@
 
           const nx =
             player.x + player.dir.x * player.speed * stepDt;
+
           const ny =
             player.y + player.dir.y * player.speed * stepDt;
 
@@ -483,7 +468,7 @@
             player.x = nx;
             player.y = ny;
           } else {
-            // Alinha o personagem ao corredor ao encontrar parede.
+            // Impede que o personagem atravesse uma parede.
             const current = tileAt(player.x, player.y);
             const center = centerOf(current.x, current.y);
 
@@ -501,9 +486,10 @@
 
           collectItems();
 
-          if (over) return;
+          if (over || destroyed) return;
         }
 
+        // Animação da boca.
         mouth += dt * 11 * mouthDir;
 
         if (mouth > 1) {
@@ -553,7 +539,10 @@
           };
         }
 
-        if (frightenedTimer > 0 || ghost.personality === "random") {
+        if (
+          frightenedTimer > 0 ||
+          ghost.personality === "random"
+        ) {
           return choices[
             Math.floor(Math.random() * choices.length)
           ];
@@ -572,6 +561,7 @@
         for (const direction of choices) {
           const nextX =
             ghost.x / TILE - 0.5 + direction.x;
+
           const nextY =
             ghost.y / TILE - 0.5 + direction.y;
 
@@ -613,7 +603,10 @@
               ghost.x = info.center.x;
               ghost.y = info.center.y;
 
-              const choices = getGhostChoices(ghost, info.tile);
+              const choices = getGhostChoices(
+                ghost,
+                info.tile
+              );
 
               ghost.dir = chooseGhostDirection(
                 ghost,
@@ -623,6 +616,7 @@
 
             const nx =
               ghost.x + ghost.dir.x * ghost.speed * stepDt;
+
             const ny =
               ghost.y + ghost.dir.y * ghost.speed * stepDt;
 
@@ -654,12 +648,15 @@
           const dy = player.y - ghost.y;
           const distance = Math.hypot(dx, dy);
 
-          if (distance >= PLAYER_RADIUS + GHOST_RADIUS) {
+          if (
+            distance >= PLAYER_RADIUS + GHOST_RADIUS
+          ) {
             continue;
           }
 
           if (frightenedTimer > 0) {
             score += 200;
+
             updateScore();
             safeSound("collect");
 
@@ -669,15 +666,17 @@
             ghost.respawnTimer = 1.2;
           } else {
             lives--;
+
             updateLives();
             safeSound("hit");
 
             if (lives <= 0) {
-              finishGame("Fim de jogo! Você perdeu todas as vidas.");
+              finishGame(
+                "Fim de jogo! Você perdeu todas as vidas."
+              );
               return;
             }
 
-            // Reposiciona o jogador e concede invulnerabilidade.
             player = createPlayer();
             invulnerable = 2;
 
@@ -693,21 +692,30 @@
         ctx.fillStyle = COLORS.background;
         ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-        // Paredes.
         for (const wall of walls) {
           const [x, y] = wall.split(",").map(Number);
           const px = x * TILE;
           const py = y * TILE;
 
           ctx.fillStyle = COLORS.wall;
-          ctx.fillRect(px + 2, py + 2, TILE - 4, TILE - 4);
+          ctx.fillRect(
+            px + 2,
+            py + 2,
+            TILE - 4,
+            TILE - 4
+          );
 
           ctx.strokeStyle = COLORS.wallGlow;
           ctx.lineWidth = 1.2;
-          ctx.strokeRect(px + 4, py + 4, TILE - 8, TILE - 8);
+
+          ctx.strokeRect(
+            px + 4,
+            py + 4,
+            TILE - 8,
+            TILE - 8
+          );
         }
 
-        // Pontos normais.
         ctx.fillStyle = COLORS.dot;
 
         for (const dot of dots) {
@@ -719,13 +727,13 @@
           ctx.fill();
         }
 
-        // Superpontos.
         for (const dot of powerDots) {
           const [x, y] = dot.split(",").map(Number);
           const center = centerOf(x, y);
 
           ctx.beginPath();
           ctx.fillStyle = COLORS.power;
+
           ctx.arc(
             center.x,
             center.y,
@@ -733,6 +741,7 @@
             0,
             Math.PI * 2
           );
+
           ctx.fill();
         }
       }
@@ -763,6 +772,7 @@
         ctx.fillStyle = COLORS.player;
         ctx.beginPath();
         ctx.moveTo(0, 0);
+
         ctx.arc(
           0,
           0,
@@ -770,9 +780,9 @@
           opening * Math.PI,
           (2 - opening) * Math.PI
         );
+
         ctx.closePath();
         ctx.fill();
-
         ctx.restore();
       }
 
@@ -807,8 +817,17 @@
           ctx.fillStyle = "#ffffff";
 
           ctx.beginPath();
-          ctx.ellipse(x - 4, y - 2, 3.5, 4.5, 0, 0, Math.PI * 2);
-          ctx.ellipse(x + 4, y - 2, 3.5, 4.5, 0, 0, Math.PI * 2);
+
+          ctx.ellipse(
+            x - 4, y - 2, 3.5, 4.5,
+            0, 0, Math.PI * 2
+          );
+
+          ctx.ellipse(
+            x + 4, y - 2, 3.5, 4.5,
+            0, 0, Math.PI * 2
+          );
+
           ctx.fill();
 
           ctx.fillStyle = "#15152b";
@@ -846,11 +865,17 @@
         ctx.fillText("VIDAS: " + lives, 400, 8);
 
         if (paused && !over) {
-          drawOverlay("JOGO PAUSADO", "Pressione continuar para jogar");
+          drawOverlay(
+            "JOGO PAUSADO",
+            "Pressione continuar para jogar"
+          );
         }
 
         if (over) {
-          drawOverlay("FIM DE JOGO", "Pontuação: " + score);
+          drawOverlay(
+            "FIM DE JOGO",
+            "Pontuação: " + score
+          );
         }
       }
 
@@ -863,11 +888,21 @@
 
         ctx.fillStyle = "#00e5ff";
         ctx.font = "bold 32px monospace";
-        ctx.fillText(title, WIDTH / 2, HEIGHT / 2 - 18);
+
+        ctx.fillText(
+          title,
+          WIDTH / 2,
+          HEIGHT / 2 - 18
+        );
 
         ctx.fillStyle = "#ffffff";
         ctx.font = "15px monospace";
-        ctx.fillText(subtitle, WIDTH / 2, HEIGHT / 2 + 20);
+
+        ctx.fillText(
+          subtitle,
+          WIDTH / 2,
+          HEIGHT / 2 + 20
+        );
 
         ctx.textAlign = "start";
         ctx.textBaseline = "alphabetic";
@@ -900,12 +935,19 @@
         if (!paused && !over) {
           gameTime += dt;
 
-          invulnerable = Math.max(0, invulnerable - dt);
-          frightenedTimer = Math.max(0, frightenedTimer - dt);
+          invulnerable = Math.max(
+            0,
+            invulnerable - dt
+          );
+
+          frightenedTimer = Math.max(
+            0,
+            frightenedTimer - dt
+          );
 
           movePlayer(dt);
 
-          if (!over) {
+          if (!over && !destroyed) {
             moveGhosts(dt);
             checkCollisions();
           }
@@ -923,13 +965,8 @@
       // =========================================================
       resetGame();
 
-      // Capture ajuda a garantir que as setas sejam recebidas
-      // mesmo se outro elemento da página tratar o teclado.
+      // Recebe os comandos enviados pelo arcade.js.
       window.addEventListener("keydown", onKey, true);
-
-      touchButtons.forEach(button => {
-        button.addEventListener("click", onTouchControl);
-      });
 
       raf = requestAnimationFrame(loop);
 
@@ -939,7 +976,10 @@
       return {
         pause() {
           paused = true;
-          player.dir = { x: 0, y: 0 };
+
+          if (player) {
+            player.dir = { x: 0, y: 0 };
+          }
         },
 
         resume() {
@@ -950,15 +990,17 @@
         },
 
         destroy() {
+          if (destroyed) return;
+
           destroyed = true;
 
           cancelAnimationFrame(raf);
 
-          window.removeEventListener("keydown", onKey, true);
-
-          touchButtons.forEach(button => {
-            button.removeEventListener("click", onTouchControl);
-          });
+          window.removeEventListener(
+            "keydown",
+            onKey,
+            true
+          );
         }
       };
     }
