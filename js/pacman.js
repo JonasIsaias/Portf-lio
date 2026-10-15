@@ -21,12 +21,14 @@
       const GHOST_SPEED = 76;
       const PLAYER_RADIUS = 12;
       const GHOST_RADIUS = 12;
+
+      // Tolerância para realizar curvas nos corredores.
       const TURN_TOLERANCE = 7;
 
       const DIRECTIONS = {
-        ArrowUp: { x: 0, y: -1 },
-        ArrowDown: { x: 0, y: 1 },
-        ArrowLeft: { x: -1, y: 0 },
+        ArrowUp:    { x: 0, y: -1 },
+        ArrowDown:  { x: 0, y: 1 },
+        ArrowLeft:  { x: -1, y: 0 },
         ArrowRight: { x: 1, y: 0 }
       };
 
@@ -74,7 +76,7 @@
             api.sound(name);
           }
         } catch (_) {
-          // O áudio não pode interromper o jogo.
+          // O jogo continua mesmo se o áudio falhar.
         }
       }
 
@@ -202,7 +204,7 @@
           walls.add(keyOf(COLS - 1, y));
         }
 
-        // Paredes internas.
+        // Paredes horizontais.
         addHorizontalWall(3, 2, 6);
         addHorizontalWall(3, 9, 10);
         addHorizontalWall(3, 13, 17);
@@ -220,6 +222,7 @@
         addHorizontalWall(11, 2, 7);
         addHorizontalWall(11, 12, 17);
 
+        // Paredes verticais.
         addVerticalWall(4, 1, 2);
         addVerticalWall(8, 4, 6);
         addVerticalWall(11, 8, 10);
@@ -230,19 +233,20 @@
         addVerticalWall(13, 6, 8);
         addVerticalWall(17, 12, 13);
 
-        // Posições iniciais livres.
+        // Garante que as posições iniciais estejam livres.
         [
           [1, 1],
           [18, 1],
           [1, 13],
           [18, 13],
+          [9, 1],
           [9, 7],
           [10, 7]
         ].forEach(([x, y]) => {
           walls.delete(keyOf(x, y));
         });
 
-        // Distribui os pontos pelas células livres.
+        // Distribui os pontos nas células livres.
         for (let y = 1; y < ROWS - 1; y++) {
           for (let x = 1; x < COLS - 1; x++) {
             if (isWall(x, y)) continue;
@@ -270,13 +274,22 @@
             powerDots.add(keyOf(x, y));
           }
         });
+
+        // Não deixa pontos na posição inicial do jogador.
+        dots.delete(keyOf(9, 1));
+        powerDots.delete(keyOf(9, 1));
       }
 
       // =========================================================
       // PERSONAGENS
       // =========================================================
       function createPlayer() {
-        const position = centerOf(1, 1);
+        // CORREÇÃO:
+        // O jogador começa em uma posição com espaço para
+        // movimentação horizontal e vertical.
+        // Antes começava em (1,1), onde subir e ir à esquerda
+        // eram movimentos bloqueados pelas bordas.
+        const position = centerOf(9, 1);
 
         return {
           x: position.x,
@@ -329,7 +342,6 @@
         over = false;
 
         buildMap();
-
         player = createPlayer();
         createGhosts();
 
@@ -339,12 +351,10 @@
       }
 
       // =========================================================
-      // CONTROLES DE TECLADO
-      // O arcade.js envia os comandos das setas do celular
-      // como eventos de teclado para a janela.
+      // CONTROLES DE TECLADO E ARCADE MOBILE
       // =========================================================
       function onKey(event) {
-        const rawKey = String(event.key || "").toLowerCase();
+        const keyName = String(event.key || "").toLowerCase();
 
         const keyDirections = {
           arrowup: DIRECTIONS.ArrowUp,
@@ -358,20 +368,40 @@
           d: DIRECTIONS.ArrowRight
         };
 
-        const direction = keyDirections[rawKey];
+        const direction = keyDirections[keyName];
 
         if (!direction) return;
 
-        // Evita a rolagem da página pelas setas.
+        // Evita que as setas rolem a página.
         event.preventDefault();
 
         if (over || paused || destroyed || !player) {
           return;
         }
 
-        // Armazena a próxima direção. A curva será realizada
-        // assim que o personagem puder alinhar-se ao corredor.
+        // Guarda a direção solicitada.
+        // A curva será realizada assim que o corredor permitir.
         player.next = { ...direction };
+
+        // Se estiver parado, tenta iniciar o movimento imediatamente.
+        if (!player.dir.x && !player.dir.y) {
+          const info = nearTileCenter(player);
+
+          if (info.near) {
+            player.x = info.center.x;
+            player.y = info.center.y;
+
+            if (
+              canMoveFromTile(
+                info.tile.x,
+                info.tile.y,
+                direction
+              )
+            ) {
+              player.dir = { ...direction };
+            }
+          }
+        }
       }
 
       // =========================================================
@@ -400,7 +430,6 @@
 
         if (dots.size === 0 && powerDots.size === 0) {
           level++;
-
           updateLevel();
           safeSound("clear");
 
@@ -426,11 +455,11 @@
           const info = nearTileCenter(player);
 
           if (info.near) {
-            // Alinha precisamente ao centro da célula.
+            // Alinha o personagem ao centro da célula.
             player.x = info.center.x;
             player.y = info.center.y;
 
-            // Prioriza a direção solicitada pelo usuário.
+            // Prioriza a direção solicitada pelo jogador.
             if (
               canMoveFromTile(
                 info.tile.x,
@@ -441,8 +470,7 @@
               player.dir = { ...player.next };
             }
 
-            // Se não for possível continuar na direção atual,
-            // para e aguarda um novo comando.
+            // Para se a direção atual estiver bloqueada.
             if (
               !canMoveFromTile(
                 info.tile.x,
@@ -468,7 +496,7 @@
             player.x = nx;
             player.y = ny;
           } else {
-            // Impede que o personagem atravesse uma parede.
+            // Impede a passagem pelas paredes.
             const current = tileAt(player.x, player.y);
             const center = centerOf(current.x, current.y);
 
@@ -486,7 +514,7 @@
 
           collectItems();
 
-          if (over || destroyed) return;
+          if (over) return;
         }
 
         // Animação da boca.
@@ -656,7 +684,6 @@
 
           if (frightenedTimer > 0) {
             score += 200;
-
             updateScore();
             safeSound("collect");
 
@@ -666,7 +693,6 @@
             ghost.respawnTimer = 1.2;
           } else {
             lives--;
-
             updateLives();
             safeSound("hit");
 
@@ -692,6 +718,7 @@
         ctx.fillStyle = COLORS.background;
         ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
+        // Paredes.
         for (const wall of walls) {
           const [x, y] = wall.split(",").map(Number);
           const px = x * TILE;
@@ -707,7 +734,6 @@
 
           ctx.strokeStyle = COLORS.wallGlow;
           ctx.lineWidth = 1.2;
-
           ctx.strokeRect(
             px + 4,
             py + 4,
@@ -716,6 +742,7 @@
           );
         }
 
+        // Pontos normais.
         ctx.fillStyle = COLORS.dot;
 
         for (const dot of dots) {
@@ -723,10 +750,17 @@
           const center = centerOf(x, y);
 
           ctx.beginPath();
-          ctx.arc(center.x, center.y, 3, 0, Math.PI * 2);
+          ctx.arc(
+            center.x,
+            center.y,
+            3,
+            0,
+            Math.PI * 2
+          );
           ctx.fill();
         }
 
+        // Superpontos.
         for (const dot of powerDots) {
           const [x, y] = dot.split(",").map(Number);
           const center = centerOf(x, y);
@@ -759,17 +793,26 @@
 
         let angle = 0;
 
-        if (player.dir.x === -1) angle = Math.PI;
-        if (player.dir.y === -1) angle = -Math.PI / 2;
-        if (player.dir.y === 1) angle = Math.PI / 2;
+        if (player.dir.x === -1) {
+          angle = Math.PI;
+        }
 
-        const opening = mouth * 0.22;
+        if (player.dir.y === -1) {
+          angle = -Math.PI / 2;
+        }
+
+        if (player.dir.y === 1) {
+          angle = Math.PI / 2;
+        }
 
         ctx.save();
         ctx.translate(player.x, player.y);
         ctx.rotate(angle);
 
         ctx.fillStyle = COLORS.player;
+
+        const opening = mouth * 0.22;
+
         ctx.beginPath();
         ctx.moveTo(0, 0);
 
@@ -783,6 +826,7 @@
 
         ctx.closePath();
         ctx.fill();
+
         ctx.restore();
       }
 
@@ -799,7 +843,9 @@
         ctx.save();
 
         ctx.fillStyle =
-          frightenedTimer > 0 ? "#3158db" : ghost.color;
+          frightenedTimer > 0
+            ? "#3158db"
+            : ghost.color;
 
         ctx.beginPath();
         ctx.arc(x, y - 2, r, Math.PI, 0);
@@ -817,7 +863,6 @@
           ctx.fillStyle = "#ffffff";
 
           ctx.beginPath();
-
           ctx.ellipse(
             x - 4, y - 2, 3.5, 4.5,
             0, 0, Math.PI * 2
@@ -947,7 +992,7 @@
 
           movePlayer(dt);
 
-          if (!over && !destroyed) {
+          if (!over) {
             moveGhosts(dt);
             checkCollisions();
           }
@@ -965,7 +1010,8 @@
       // =========================================================
       resetGame();
 
-      // Recebe os comandos enviados pelo arcade.js.
+      // Recebe as setas reais e os KeyboardEvent enviados
+      // pelo sistema central de controles do arcade.
       window.addEventListener("keydown", onKey, true);
 
       raf = requestAnimationFrame(loop);
@@ -990,8 +1036,6 @@
         },
 
         destroy() {
-          if (destroyed) return;
-
           destroyed = true;
 
           cancelAnimationFrame(raf);
