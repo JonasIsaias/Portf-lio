@@ -262,26 +262,31 @@
       }
 
       function onKey(event) {
-        const direction = DIRECTIONS[event.key];
+        const keyName = event.key.toLowerCase();
 
-        if (!direction) {
-          const normalized = event.key.toLowerCase();
-          const alternative = DIRECTIONS[normalized];
+        const dirs = {
+            arrowup: { x: 0, y: -1 },
+            w: { x: 0, y: -1 },
 
-          if (!alternative) return;
+            arrowdown: { x: 0, y: 1 },
+            s: { x: 0, y: 1 },
 
-          if (over || paused) return;
+            arrowleft: { x: -1, y: 0 },
+            a: { x: -1, y: 0 },
 
-          event.preventDefault();
-          setDirection(alternative);
-          return;
-        }
+            arrowright: { x: 1, y: 0 },
+            d: { x: 1, y: 0 }
+        };
 
-        if (over || paused) return;
+        if (!dirs[keyName]) return;
 
-        // Impede que as setas rolem a página durante o jogo.
+        // Evita que as setas movimentem a página.
         event.preventDefault();
-        setDirection(direction);
+
+        if (over || paused || !player) return;
+
+        // Guarda a direção solicitada para a próxima curva.
+        player.next = { ...dirs[keyName] };
       }
 
       // Também aceita teclas WASD quando o navegador informa maiúsculas.
@@ -816,7 +821,7 @@
           return;
         }
 
-        const dt = Math.min((time - (last || time)) / 1000, 0.035);
+        const dt = Math.min((time - (last || time)) / 1000, 0.02);
         last = time;
 
         if (!paused) {
