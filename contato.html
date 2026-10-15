@@ -1,76 +1,143 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Contato - Jonas Isaias</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090b14">
+  <meta name="description" content="Entre em contato com Jonas Isaias para conversar sobre desenvolvimento, tecnologia e projetos.">
+  <title>Contato | Jonas Isaias</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800&family=Share+Tech+Mono&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-  <!-- AOS CSS -->
-  <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet" />
-
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <canvas id="canvas" aria-hidden="true"></canvas>
   <canvas id="stars" aria-hidden="true"></canvas>
+  <canvas id="canvas" aria-hidden="true"></canvas>
+  <div class="scanlines" aria-hidden="true"></div>
+  <div class="screen-vignette" aria-hidden="true"></div>
 
-  <div class="container">
-    <nav class="menu">
-      <a href="index.html">Início</a>
-      <a href="sobre.html">Sobre mim</a>
-      <a href="projetos.html">Projetos</a>
-      <a href="contato.html">Contato</a>
+  <header class="site-header">
+    <a class="brand" href="index.html" aria-label="Jonas Isaias, início">
+      <span class="brand-icon">JI<span>_</span></span>
+      <span class="brand-name">JONAS<span>ISAIAS</span></span>
+    </a>
+    <button class="menu-toggle" id="menuToggle" aria-label="Abrir menu" aria-expanded="false">
+      <i class="fa-solid fa-bars"></i>
+    </button>
+    <nav class="site-nav" id="siteNav" aria-label="Navegação principal">
+      <a href="index.html"><span>00.</span> INÍCIO</a>
+      <a href="sobre.html"><span>01.</span> SOBRE</a>
+      <a href="projetos.html"><span>02.</span> PROJETOS</a>
+      <a href="contato.html" class="active"><span>03.</span> CONTATO</a>
     </nav>
+    <button class="sound-toggle" id="soundToggle" type="button" aria-pressed="false">
+      <i class="fa-solid fa-volume-xmark"></i><span>SOM OFF</span>
+    </button>
+  </header>
 
-    <section>
-        <p>Se você estiver interessado em discutir projetos ou colaborações, sinta-se à vontade para entrar em contato!</p>
-      <h2>Contato</h2>
-      <form id="form-contato">
-        <input type="text" name="nome" placeholder="Seu nome" required>
-        <input type="email" name="email" placeholder="Seu e-mail" required>
-        <textarea name="mensagem" rows="5" placeholder="Sua mensagem" required></textarea>
-        <button type="submit">Enviar</button>
-      </form>
+  <main class="inner-page section-shell">
+    <section class="page-hero">
+      <p class="eyebrow"><span class="heading-symbol">[</span> ESTABLISH CONNECTION <span class="heading-symbol">]</span></p>
+      <h1>Vamos nos <span class="text-gradient">conectar.</span></h1>
+      <p class="page-lead">Tem uma ideia, um projeto ou uma oportunidade? Meu terminal está pronto para receber sua mensagem.</p>
+      <div class="breadcrumb"><a href="index.html">INÍCIO</a><span>/</span><span>CONTATO</span></div>
     </section>
 
-    <footer class="rodape">
-      <p>&copy; 2025 Jonas Isaias. Todos os direitos reservados.</p>
-      <div class="social-links">
-        <a href="https://linkedin.com/in/jonas-isaias-3a02ba293" target="_blank" rel="noopener" aria-label="LinkedIn">
-          <i class="fab fa-linkedin-in"></i>
-        </a>
-        <a href="https://github.com/JonasIsaias" target="_blank" rel="noopener" aria-label="GitHub">
-          <i class="fab fa-github"></i>
-        </a>
+    <section class="contact-layout">
+      <div class="contact-information">
+        <div class="content-panel connection-panel">
+          <div class="panel-heading"><span>CONNECTION STATUS</span><i class="fa-solid fa-satellite-dish"></i></div>
+          <div class="connection-indicator">
+            <span class="connection-pulse"></span>
+            <div><strong>CANAL DISPONÍVEL</strong><small>Aguardando uma nova conexão.</small></div>
+          </div>
+          <h2>Vamos tirar sua ideia do papel?</h2>
+          <p>Estou aberto a conversar sobre tecnologia, desenvolvimento de software, automação e projetos criativos.</p>
+          <div class="contact-method">
+            <span class="contact-method-icon"><i class="fa-brands fa-linkedin-in"></i></span>
+            <div><small>LINKEDIN</small><a href="https://linkedin.com/in/jonas-isaias-3a02ba293" target="_blank" rel="noopener noreferrer">Conectar profissionalmente</a></div>
+            <i class="fa-solid fa-arrow-up-right-from-square contact-method-arrow"></i>
+          </div>
+          <div class="contact-method">
+            <span class="contact-method-icon"><i class="fa-brands fa-github"></i></span>
+            <div><small>GITHUB</small><a href="https://github.com/JonasIsaias" target="_blank" rel="noopener noreferrer">Explorar meus repositórios</a></div>
+            <i class="fa-solid fa-arrow-up-right-from-square contact-method-arrow"></i>
+          </div>
+        </div>
+
+        <div class="terminal-window contact-terminal">
+          <div class="terminal-bar">
+            <div class="terminal-lights"><i></i><i></i><i></i></div>
+            <span>connection_protocol.sh</span>
+          </div>
+          <div class="terminal-content">
+            <p><span class="terminal-green">$</span> ./establish_connection.sh</p>
+            <p class="terminal-muted">Searching for a new collaboration...</p>
+            <p><span class="terminal-green">[OK]</span> Communication channel initialized.</p>
+            <p><span class="terminal-green">[OK]</span> Waiting for your message<span class="typing-cursor">▋</span></p>
+          </div>
+        </div>
       </div>
-    </footer>
-  </div>
 
-  <!-- AOS JS -->
-  <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
-  <script>AOS.init();</script>
+      <div class="content-panel contact-form-panel">
+        <div class="panel-heading"><span>NEW MESSAGE // INPUT</span><i class="fa-solid fa-envelope-open-text"></i></div>
+        <h2>Envie uma mensagem</h2>
+        <p class="muted-text">Preencha os campos abaixo. Seu aplicativo de e-mail será aberto com a mensagem preparada para envio.</p>
 
-  <!-- Scripts -->
-  <script src="js/particles.js"></script>
-  <script src="js/main.js"></script>
-  <script>
-    const form = document.getElementById("form-contato");
-        if (form) {
-            form.addEventListener("submit", (e) => {
-            e.preventDefault();
-            const botao = e.target.querySelector("button");
-            botao.disabled = true;
-            botao.textContent = "Enviando...";
+        <form id="contactForm" class="contact-form">
+          <div class="form-field">
+            <label for="name">NOME <span>*</span></label>
+            <input id="name" name="name" type="text" placeholder="Como posso te chamar?" autocomplete="name" maxlength="100" required>
+          </div>
 
-            setTimeout(() => {
-                alert("Mensagem enviada! (Simulação)");
-                e.target.reset();
-                botao.disabled = false;
-                botao.textContent = "Enviar";
-            }, 1500);
-            });
-        }
-  </script>
+          <div class="form-field">
+            <label for="email">SEU E-MAIL <span>*</span></label>
+            <input id="email" name="email" type="email" placeholder="voce@exemplo.com" autocomplete="email" maxlength="150" required>
+          </div>
+
+          <div class="form-field">
+            <label for="subject">ASSUNTO <span>*</span></label>
+            <select id="subject" name="subject" required>
+              <option value="" disabled selected>Selecione o assunto</option>
+              <option value="Oportunidade profissional">Oportunidade profissional</option>
+              <option value="Desenvolvimento de projeto">Desenvolvimento de projeto</option>
+              <option value="Automação de processos">Automação de processos</option>
+              <option value="Parceria">Parceria</option>
+              <option value="Outro assunto">Outro assunto</option>
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="message">MENSAGEM <span>*</span></label>
+            <textarea id="message" name="message" rows="6" placeholder="Descreva sua ideia, desafio ou oportunidade..." maxlength="5000" required></textarea>
+            <div class="character-count"><span id="characterCount">0</span>/5000</div>
+          </div>
+
+          <p class="form-note"><i class="fa-solid fa-circle-info"></i> Este formulário não envia dados para um servidor. Ele prepara um e-mail no aplicativo configurado no seu dispositivo.</p>
+
+          <button class="btn btn-primary form-submit sound-action" type="submit">
+            PREPARAR E-MAIL <i class="fa-regular fa-paper-plane"></i>
+          </button>
+          <p id="formFeedback" class="form-feedback" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <a class="footer-brand" href="index.html">JI<span>_</span></a>
+    <p>© <span class="current-year">2026</span> JONAS ISAIAS. TODOS OS DIREITOS RESERVADOS.</p>
+    <div class="footer-socials">
+      <a href="https://github.com/JonasIsaias" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><i class="fa-brands fa-github"></i></a>
+      <a href="https://linkedin.com/in/jonas-isaias-3a02ba293" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+      <a href="#" class="back-to-top" aria-label="Voltar ao topo"><i class="fa-solid fa-arrow-up"></i></a>
+    </div>
+  </footer>
+
+  <script src="js/particles.js" defer></script>
+  <script src="js/effects.js" defer></script>
+  <script src="js/main.js" defer></script>
 </body>
 </html>
