@@ -8,10 +8,9 @@
     init(canvas, api) {
       const ctx = canvas.getContext("2d");
 
-      if (!ctx) {
-        throw new Error("Não foi possível inicializar o Canvas do Pac-Man.");
-      }
-
+      // =========================================================
+      // CONFIGURAÇÕES
+      // =========================================================
       const TILE = 36;
       const COLS = 20;
       const ROWS = 15;
@@ -19,20 +18,25 @@
       const HEIGHT = ROWS * TILE;
 
       const PLAYER_SPEED = 145;
-      const GHOST_SPEED = 85;
+      const GHOST_SPEED = 76;
       const PLAYER_RADIUS = 12;
       const GHOST_RADIUS = 12;
-      const CENTER_TOLERANCE = 5;
 
       const DIRECTIONS = {
-        ArrowUp: { x: 0, y: -1 },
-        ArrowDown: { x: 0, y: 1 },
-        ArrowLeft: { x: -1, y: 0 },
-        ArrowRight: { x: 1, y: 0 },
-        w: { x: 0, y: -1 },
-        s: { x: 0, y: 1 },
-        a: { x: -1, y: 0 },
-        d: { x: 1, y: 0 }
+        ArrowUp:    { x: 0, y: -1 },
+        ArrowDown:  { x: 0, y: 1 },
+        ArrowLeft:  { x: -1, y: 0 },
+        ArrowRight: { x: 1, y: 0 }
+      };
+
+      const COLORS = {
+        background: "#060713",
+        wall: "#18245a",
+        wallGlow: "#00e5ff",
+        player: "#ffe34d",
+        dot: "#e8eaff",
+        power: "#ff4edb",
+        text: "#d9ddff"
       };
 
       let raf = 0;
@@ -43,259 +47,115 @@
 
       let score = 0;
       let lives = 3;
+      let level = 1;
+
       let mouth = 0;
       let mouthDir = 1;
       let invulnerable = 0;
-      let ghostModeTimer = 0;
-      let frightened = false;
+      let frightenedTimer = 0;
       let gameTime = 0;
 
       let walls = new Set();
       let dots = new Set();
       let powerDots = new Set();
 
-      let player;
+      let player = null;
       let ghosts = [];
 
-      let swipeStart = null;
-      let activePointer = null;
+      // =========================================================
+      // FUNÇÕES AUXILIARES
+      // =========================================================
+      const keyOf = (x, y) => `${x},${y}`;
 
-      const key = (x, y) => `${x},${y}`;
+      function safeSound(name) {
+        try {
+          if (api && typeof api.sound === "function") {
+            api.sound(name);
+          }
+        } catch (_) {
+          // O jogo continua mesmo se o áudio falhar.
+        }
+      }
 
-      const sameDirection = (a, b) =>
-        a.x === b.x && a.y === b.y;
+      function updateScore() {
+        if (api && typeof api.setScore === "function") {
+          api.setScore(score);
+        }
+      }
 
-      const isZeroDirection = (dir) =>
-        dir.x === 0 && dir.y === 0;
+      function updateLives() {
+        if (api && typeof api.setLives === "function") {
+          api.setLives(lives);
+        }
+      }
 
-      const tileAt = (px, py) => ({
-        x: Math.floor(px / TILE),
-        y: Math.floor(py / TILE)
-      });
+      function updateLevel() {
+        if (api && typeof api.setLevel === "function") {
+          api.setLevel(level);
+        }
+      }
 
-      const centerOf = (tileX, tileY) => ({
-        x: tileX * TILE + TILE / 2,
-        y: tileY * TILE + TILE / 2
-      });
+      function finishGame(message) {
+        if (over) return;
 
-      const distance = (a, b) =>
-        Math.hypot(a.x - b.x, a.y - b.y);
+        over = true;
+        player.dir = { x: 0, y: 0 };
+        player.next = { x: 0, y: 0 };
 
-      function wallAt(x, y) {
+        if (api && typeof api.end === "function") {
+          api.end(message);
+        }
+      }
+
+      function centerOf(x, y) {
+        return {
+          x: x * TILE + TILE / 2,
+          y: y * TILE + TILE / 2
+        };
+      }
+
+      function tileAt(x, y) {
+        return {
+          x: Math.floor(x / TILE),
+          y: Math.floor(y / TILE)
+        };
+      }
+
+      function isWall(x, y) {
         if (x < 0 || y < 0 || x >= COLS || y >= ROWS) {
           return true;
         }
 
-        return walls.has(key(x, y));
+        return walls.has(keyOf(x, y));
       }
 
-      function buildMap() {
-        walls = new Set();
-        dots = new Set();
-        powerDots = new Set();
-
-        // Contorno.
-        for (let x = 0; x < COLS; x++) {
-          walls.add(key(x, 0));
-          walls.add(key(x, ROWS - 1));
+      function canMoveFromTile(x, y, direction) {
+        if (!direction || (!direction.x && !direction.y)) {
+          return false;
         }
 
-        for (let y = 0; y < ROWS; y++) {
-          walls.add(key(0, y));
-          walls.add(key(COLS - 1, y));
-        }
-
-        // Barreiras.
-        const blocks = [
-          [3, 2, 5, 2],
-          [3, 3, 3, 5],
-          [7, 2, 7, 4],
-          [8, 5, 11, 5],
-          [12, 2, 16, 2],
-          [16, 3, 16, 5],
-
-          [5, 7, 8, 7],
-          [11, 7, 14, 7],
-
-          [3, 9, 3, 12],
-          [4, 9, 7, 9],
-          [9, 9, 9, 12],
-          [12, 9, 16, 9],
-          [16, 10, 16, 12],
-
-          [6, 12, 7, 12],
-          [12, 12, 13, 12]
-        ];
-
-        for (const [x1, y1, x2, y2] of blocks) {
-          for (let y = y1; y <= y2; y++) {
-            for (let x = x1; x <= x2; x++) {
-              walls.add(key(x, y));
-            }
-          }
-        }
-
-        // Aberturas e conexões.
-        const openings = [
-          [3, 4], [7, 3], [7, 4],
-          [12, 3], [16, 4],
-          [6, 7], [13, 7],
-          [3, 10], [9, 10],
-          [16, 11], [6, 12], [12, 12],
-
-          [5, 3], [5, 4], [5, 5],
-          [8, 3], [9, 3], [10, 3], [11, 3],
-          [14, 3], [14, 4], [14, 5],
-          [4, 6], [5, 6], [6, 6],
-          [9, 6], [10, 6],
-          [13, 6], [14, 6],
-          [4, 8], [5, 8], [6, 8],
-          [10, 8], [11, 8], [12, 8],
-          [8, 10], [10, 10], [11, 10],
-          [5, 11], [6, 11], [7, 11],
-          [13, 11], [14, 11], [15, 11]
-        ];
-
-        openings.forEach(([x, y]) => walls.delete(key(x, y)));
-
-        // Posições iniciais transitáveis.
-        [
-          [1, 1], [18, 1],
-          [1, 13], [18, 13],
-          [10, 7], [10, 6]
-        ].forEach(([x, y]) => walls.delete(key(x, y)));
-
-        // Pontos comuns.
-        for (let y = 1; y < ROWS - 1; y++) {
-          for (let x = 1; x < COLS - 1; x++) {
-            if (!wallAt(x, y)) {
-              dots.add(key(x, y));
-            }
-          }
-        }
-
-        // Posições de início sem pontos comuns.
-        [
-          [1, 1], [18, 1],
-          [1, 13], [18, 13],
-          [10, 7]
-        ].forEach(([x, y]) => dots.delete(key(x, y)));
-
-        // Pontos especiais.
-        [
-          [1, 1], [18, 1],
-          [1, 13], [18, 13]
-        ].forEach(([x, y]) => {
-          if (!wallAt(x, y)) {
-            dots.delete(key(x, y));
-            powerDots.add(key(x, y));
-          }
-        });
+        return !isWall(
+          x + direction.x,
+          y + direction.y
+        );
       }
 
-      function createGhost(x, y, color, id) {
-        const p = centerOf(x, y);
-
-        return {
-          x: p.x,
-          y: p.y,
-          startX: p.x,
-          startY: p.y,
-          color,
-          id,
-          dir: { x: 0, y: 0 },
-          timer: 0,
-          eaten: false
-        };
-      }
-
-      function resetPositions() {
-        const start = centerOf(1, 1);
-
-        player = {
-          x: start.x,
-          y: start.y,
-          dir: { x: 0, y: 0 },
-          next: { x: 0, y: 0 },
-          speed: PLAYER_SPEED
-        };
-
-        ghosts = [
-          createGhost(18, 1, "#ff4e91", 0),
-          createGhost(18, 13, "#00e5ff", 1),
-          createGhost(1, 13, "#ff9e57", 2)
-        ];
-
-        invulnerable = 1.5;
-        frightened = false;
-        ghostModeTimer = 0;
-      }
-
-      function isWalkable(px, py, radius = 10) {
+      // Verifica a posição dos quatro cantos do personagem.
+      function isWalkable(x, y, radius) {
         const points = [
-          [px - radius, py],
-          [px + radius, py],
-          [px, py - radius],
-          [px, py + radius]
+          [x - radius, y - radius],
+          [x + radius, y - radius],
+          [x - radius, y + radius],
+          [x + radius, y + radius]
         ];
 
-        return points.every(([x, y]) => {
-          const tile = tileAt(x, y);
-          return !wallAt(tile.x, tile.y);
+        return points.every(([px, py]) => {
+          const tile = tileAt(px, py);
+          return !isWall(tile.x, tile.y);
         });
       }
 
-      function canMoveFromTile(x, y, dir) {
-        if (isZeroDirection(dir)) return false;
-
-        return !wallAt(x + dir.x, y + dir.y);
-      }
-
-      // Recebe direção tanto do teclado quanto dos botões de toque.
-      function setDirection(direction) {
-        if (!player || over || paused || destroyed) return;
-
-        player.next = {
-          x: direction.x,
-          y: direction.y
-        };
-      }
-
-      function onKey(event) {
-        const keyName = event.key.toLowerCase();
-
-        const dirs = {
-            arrowup: { x: 0, y: -1 },
-            w: { x: 0, y: -1 },
-
-            arrowdown: { x: 0, y: 1 },
-            s: { x: 0, y: 1 },
-
-            arrowleft: { x: -1, y: 0 },
-            a: { x: -1, y: 0 },
-
-            arrowright: { x: 1, y: 0 },
-            d: { x: 1, y: 0 }
-        };
-
-        if (!dirs[keyName]) return;
-
-        // Evita que as setas movimentem a página.
-        event.preventDefault();
-
-        if (over || paused || !player) return;
-
-        // Guarda a direção solicitada para a próxima curva.
-        player.next = { ...dirs[keyName] };
-      }
-
-      // Também aceita teclas WASD quando o navegador informa maiúsculas.
-      function onKeyDown(event) {
-        if (event.key === " " || event.code === "Space") return;
-        onKey(event);
-      }
-
-      function nearTileCenter(entity, tolerance = CENTER_TOLERANCE) {
+      function nearTileCenter(entity, tolerance = 6) {
         const tile = tileAt(entity.x, entity.y);
         const center = centerOf(tile.x, tile.y);
 
@@ -308,337 +168,585 @@
         };
       }
 
-      function movePlayer(dt) {
-        const info = nearTileCenter(player);
+      function addHorizontalWall(y, startX, endX) {
+        for (let x = startX; x <= endX; x++) {
+          walls.add(keyOf(x, y));
+        }
+      }
 
-        if (info.near) {
-          player.x = info.center.x;
-          player.y = info.center.y;
+      function addVerticalWall(x, startY, endY) {
+        for (let y = startY; y <= endY; y++) {
+          walls.add(keyOf(x, y));
+        }
+      }
 
-          // Prioriza a direção solicitada pelo jogador.
-          if (
-            !isZeroDirection(player.next) &&
-            canMoveFromTile(info.tile.x, info.tile.y, player.next)
-          ) {
-            player.dir = { ...player.next };
-          }
+      // =========================================================
+      // CONSTRUÇÃO DO LABIRINTO
+      // =========================================================
+      function buildMap() {
+        walls = new Set();
+        dots = new Set();
+        powerDots = new Set();
 
-          // Para apenas quando o corredor à frente está bloqueado.
-          if (
-            !isZeroDirection(player.dir) &&
-            !canMoveFromTile(info.tile.x, info.tile.y, player.dir)
-          ) {
-            player.dir = { x: 0, y: 0 };
+        // Bordas externas.
+        for (let x = 0; x < COLS; x++) {
+          walls.add(keyOf(x, 0));
+          walls.add(keyOf(x, ROWS - 1));
+        }
+
+        for (let y = 0; y < ROWS; y++) {
+          walls.add(keyOf(0, y));
+          walls.add(keyOf(COLS - 1, y));
+        }
+
+        // Paredes internas. Os corredores permanecem conectados.
+        addHorizontalWall(3, 2, 6);
+        addHorizontalWall(3, 9, 10);
+        addHorizontalWall(3, 13, 17);
+
+        addHorizontalWall(5, 3, 7);
+        addHorizontalWall(5, 12, 16);
+
+        addHorizontalWall(7, 2, 5);
+        addHorizontalWall(7, 8, 11);
+        addHorizontalWall(7, 14, 17);
+
+        addHorizontalWall(9, 3, 6);
+        addHorizontalWall(9, 13, 16);
+
+        addHorizontalWall(11, 2, 7);
+        addHorizontalWall(11, 12, 17);
+
+        addVerticalWall(4, 1, 2);
+        addVerticalWall(8, 4, 6);
+        addVerticalWall(11, 8, 10);
+        addVerticalWall(15, 1, 2);
+
+        addVerticalWall(2, 8, 10);
+        addVerticalWall(7, 12, 13);
+        addVerticalWall(13, 6, 8);
+        addVerticalWall(17, 12, 13);
+
+        // Garante que as posições iniciais estejam livres.
+        [
+          [1, 1],
+          [18, 1],
+          [1, 13],
+          [18, 13],
+          [9, 7],
+          [10, 7]
+        ].forEach(([x, y]) => {
+          walls.delete(keyOf(x, y));
+        });
+
+        // Distribui os pontos por todas as células livres.
+        for (let y = 1; y < ROWS - 1; y++) {
+          for (let x = 1; x < COLS - 1; x++) {
+            if (isWall(x, y)) continue;
+
+            // Evita colocar pontos dentro da área inicial
+            // dos fantasmas.
+            const ghostSpawn =
+              (x === 18 && y === 1) ||
+              (x === 1 && y === 13) ||
+              (x === 18 && y === 13);
+
+            if (!ghostSpawn) {
+              dots.add(keyOf(x, y));
+            }
           }
         }
 
-        if (!isZeroDirection(player.dir)) {
-          const nx = player.x + player.dir.x * player.speed * dt;
-          const ny = player.y + player.dir.y * player.speed * dt;
+        // Superpontos nos quatro cantos acessíveis.
+        [
+          [1, 1],
+          [18, 1],
+          [1, 13],
+          [18, 13]
+        ].forEach(([x, y]) => {
+          if (!isWall(x, y)) {
+            dots.delete(keyOf(x, y));
+            powerDots.add(keyOf(x, y));
+          }
+        });
+      }
+
+      // =========================================================
+      // PERSONAGENS
+      // =========================================================
+      function createPlayer() {
+        const position = centerOf(1, 1);
+
+        return {
+          x: position.x,
+          y: position.y,
+          dir: { x: 0, y: 0 },
+          next: { x: 0, y: 0 },
+          speed: PLAYER_SPEED
+        };
+      }
+
+      function createGhost(x, y, color, personality) {
+        const position = centerOf(x, y);
+
+        return {
+          x: position.x,
+          y: position.y,
+          startX: position.x,
+          startY: position.y,
+          dir: { x: 0, y: 0 },
+          speed: GHOST_SPEED,
+          color,
+          personality,
+          respawnTimer: 0
+        };
+      }
+
+      function createGhosts() {
+        ghosts = [
+          createGhost(18, 1, "#ff4e70", "chase"),
+          createGhost(1, 13, "#00e5ff", "ambush"),
+          createGhost(18, 13, "#ff9e42", "random")
+        ];
+      }
+
+      // =========================================================
+      // REINICIALIZAÇÃO
+      // =========================================================
+      function resetGame() {
+        score = 0;
+        lives = 3;
+        level = 1;
+
+        mouth = 0;
+        mouthDir = 1;
+        invulnerable = 1.5;
+        frightenedTimer = 0;
+        gameTime = 0;
+
+        paused = false;
+        over = false;
+
+        buildMap();
+        player = createPlayer();
+        createGhosts();
+
+        updateScore();
+        updateLives();
+        updateLevel();
+      }
+
+      // =========================================================
+      // CONTROLES DE TECLADO
+      // =========================================================
+      function onKey(event) {
+        const keyName = event.key.toLowerCase();
+
+        const keyDirections = {
+          arrowup: DIRECTIONS.ArrowUp,
+          arrowdown: DIRECTIONS.ArrowDown,
+          arrowleft: DIRECTIONS.ArrowLeft,
+          arrowright: DIRECTIONS.ArrowRight,
+          w: DIRECTIONS.ArrowUp,
+          s: DIRECTIONS.ArrowDown,
+          a: DIRECTIONS.ArrowLeft,
+          d: DIRECTIONS.ArrowRight
+        };
+
+        const direction = keyDirections[keyName];
+
+        if (!direction) return;
+
+        // Impede que as setas rolem a página.
+        event.preventDefault();
+
+        if (over || paused || destroyed || !player) {
+          return;
+        }
+
+        // A direção fica armazenada até ser possível
+        // realizar a curva no labirinto.
+        player.next = { ...direction };
+      }
+
+      // =========================================================
+      // CONTROLES DE TOQUE
+      // =========================================================
+      const touchButtons = document.querySelectorAll(
+        ".touch-controls [data-key]"
+      );
+
+      function onTouchControl(event) {
+        event.preventDefault();
+
+        if (over || paused || destroyed || !player) {
+          return;
+        }
+
+        const keyName = event.currentTarget.dataset.key;
+        const direction = DIRECTIONS[keyName];
+
+        if (direction) {
+          player.next = { ...direction };
+        }
+      }
+
+      // =========================================================
+      // COLETA DE PONTOS
+      // =========================================================
+      function collectItems() {
+        const tile = tileAt(player.x, player.y);
+        const key = keyOf(tile.x, tile.y);
+
+        if (dots.has(key)) {
+          dots.delete(key);
+          score += 10;
+
+          updateScore();
+          safeSound("collect");
+        }
+
+        if (powerDots.has(key)) {
+          powerDots.delete(key);
+          score += 50;
+          frightenedTimer = 7;
+
+          updateScore();
+          safeSound("power");
+        }
+
+        if (dots.size === 0 && powerDots.size === 0) {
+          level++;
+          updateLevel();
+          safeSound("clear");
+
+          buildMap();
+
+          player = createPlayer();
+          createGhosts();
+
+          invulnerable = 1.5;
+          frightenedTimer = 0;
+        }
+      }
+
+      // =========================================================
+      // MOVIMENTAÇÃO DO PAC-MAN
+      // =========================================================
+      function movePlayer(dt) {
+        // Divide o deslocamento em pequenos passos para evitar
+        // atravessar paredes ou perder o centro de uma célula.
+        const distance = player.speed * dt;
+        const steps = Math.max(1, Math.ceil(distance / 2));
+        const stepDt = dt / steps;
+
+        for (let step = 0; step < steps; step++) {
+          const info = nearTileCenter(player, 6);
+
+          if (info.near) {
+            player.x = info.center.x;
+            player.y = info.center.y;
+
+            // Primeiro tenta realizar a direção solicitada.
+            if (
+              canMoveFromTile(
+                info.tile.x,
+                info.tile.y,
+                player.next
+              )
+            ) {
+              player.dir = { ...player.next };
+            }
+
+            // Se a direção atual estiver bloqueada, para.
+            if (
+              !canMoveFromTile(
+                info.tile.x,
+                info.tile.y,
+                player.dir
+              )
+            ) {
+              player.dir = { x: 0, y: 0 };
+            }
+          }
+
+          if (!player.dir.x && !player.dir.y) {
+            break;
+          }
+
+          const nx =
+            player.x + player.dir.x * player.speed * stepDt;
+          const ny =
+            player.y + player.dir.y * player.speed * stepDt;
 
           if (isWalkable(nx, ny, PLAYER_RADIUS)) {
             player.x = nx;
             player.y = ny;
           } else {
-            // Alinha o personagem ao corredor ao alcançar uma parede.
-            const tile = tileAt(player.x, player.y);
-            const center = centerOf(tile.x, tile.y);
+            // Alinha o personagem ao corredor ao encontrar parede.
+            const current = tileAt(player.x, player.y);
+            const center = centerOf(current.x, current.y);
 
             if (player.dir.x !== 0) {
-              player.y = center.y;
-            }
-
-            if (player.dir.y !== 0) {
               player.x = center.x;
             }
 
-            player.dir = { x: 0, y: 0 };
-          }
-        }
+            if (player.dir.y !== 0) {
+              player.y = center.y;
+            }
 
-        collectItems();
+            player.dir = { x: 0, y: 0 };
+            break;
+          }
+
+          collectItems();
+
+          if (over) return;
+        }
 
         mouth += dt * 11 * mouthDir;
 
-        if (mouth >= 1) {
+        if (mouth > 1) {
           mouth = 1;
           mouthDir = -1;
-        } else if (mouth <= 0) {
+        } else if (mouth < 0) {
           mouth = 0;
           mouthDir = 1;
         }
       }
 
-      function collectItems() {
-        const tile = tileAt(player.x, player.y);
-        const current = key(tile.x, tile.y);
-
-        if (dots.delete(current)) {
-          score += 10;
-          api.setScore(score);
-          api.sound("collect");
-        }
-
-        if (powerDots.delete(current)) {
-          score += 50;
-          api.setScore(score);
-
-          frightened = true;
-          ghostModeTimer = 6;
-
-          api.sound("clear");
-        }
-
-        if (dots.size === 0 && powerDots.size === 0 && !over) {
-          over = true;
-          api.win("Você limpou o labirinto e coletou todos os pontos!");
-        }
-      }
-
+      // =========================================================
+      // FANTASMAS
+      // =========================================================
       function getGhostChoices(ghost, tile) {
-        const directions = [
-          { x: 1, y: 0 },
-          { x: -1, y: 0 },
-          { x: 0, y: 1 },
-          { x: 0, y: -1 }
-        ];
-
-        const valid = directions.filter(dir =>
-          canMoveFromTile(tile.x, tile.y, dir)
-        );
-
         const reverse = {
           x: -ghost.dir.x,
           y: -ghost.dir.y
         };
 
-        const forward = valid.filter(dir =>
-          !sameDirection(dir, reverse)
-        );
+        return [
+          { x: 0, y: -1 },
+          { x: 0, y: 1 },
+          { x: -1, y: 0 },
+          { x: 1, y: 0 }
+        ].filter(direction => {
+          if (
+            direction.x === reverse.x &&
+            direction.y === reverse.y
+          ) {
+            return false;
+          }
 
-        return forward.length ? forward : valid;
+          return canMoveFromTile(
+            tile.x,
+            tile.y,
+            direction
+          );
+        });
       }
 
-      function chooseGhostDirection(ghost, tile) {
-        const choices = getGhostChoices(ghost, tile);
-
-        if (!choices.length) {
-          ghost.dir = { x: 0, y: 0 };
-          return;
-        }
-
-        if (frightened) {
-          choices.sort((a, b) => {
-            const pa = centerOf(tile.x + a.x, tile.y + a.y);
-            const pb = centerOf(tile.x + b.x, tile.y + b.y);
-
-            return distance(pb, player) - distance(pa, player);
-          });
-
-          const top = choices.slice(0, Math.min(2, choices.length));
-          ghost.dir = { ...top[Math.floor(Math.random() * top.length)] };
-          return;
-        }
-
-        if (Math.random() < 0.65) {
-          choices.sort((a, b) => {
-            const pa = centerOf(tile.x + a.x, tile.y + a.y);
-            const pb = centerOf(tile.x + b.x, tile.y + b.y);
-
-            return distance(pa, player) - distance(pb, player);
-          });
-
-          ghost.dir = { ...choices[0] };
-        } else {
-          ghost.dir = {
-            ...choices[Math.floor(Math.random() * choices.length)]
+      function chooseGhostDirection(ghost, choices) {
+        if (choices.length === 0) {
+          return {
+            x: -ghost.dir.x,
+            y: -ghost.dir.y
           };
         }
+
+        if (frightenedTimer > 0 || ghost.personality === "random") {
+          return choices[
+            Math.floor(Math.random() * choices.length)
+          ];
+        }
+
+        const target = tileAt(player.x, player.y);
+
+        if (ghost.personality === "ambush") {
+          target.x += player.dir.x * 2;
+          target.y += player.dir.y * 2;
+        }
+
+        let best = choices[0];
+        let bestDistance = Infinity;
+
+        for (const direction of choices) {
+          const nextX =
+            ghost.x / TILE - 0.5 + direction.x;
+          const nextY =
+            ghost.y / TILE - 0.5 + direction.y;
+
+          const distance =
+            Math.abs(target.x - nextX) +
+            Math.abs(target.y - nextY);
+
+          if (distance < bestDistance) {
+            bestDistance = distance;
+            best = direction;
+          }
+        }
+
+        return best;
       }
 
       function moveGhosts(dt) {
         for (const ghost of ghosts) {
-          if (ghost.eaten) continue;
+          if (ghost.respawnTimer > 0) {
+            ghost.respawnTimer -= dt;
 
-          ghost.timer -= dt;
-
-          const info = nearTileCenter(ghost, 4);
-
-          if (info.near && ghost.timer <= 0) {
-            ghost.x = info.center.x;
-            ghost.y = info.center.y;
-
-            chooseGhostDirection(ghost, info.tile);
-            ghost.timer = 0.22;
-          }
-
-          const speed = frightened ? 65 : GHOST_SPEED;
-          const nx = ghost.x + ghost.dir.x * speed * dt;
-          const ny = ghost.y + ghost.dir.y * speed * dt;
-
-          if (isWalkable(nx, ny, 5)) {
-            ghost.x = nx;
-            ghost.y = ny;
-          } else {
-            ghost.timer = 0;
-            ghost.dir = { x: 0, y: 0 };
-          }
-
-          // Colisão com o jogador.
-          const separation = distance(player, ghost);
-
-          if (separation < PLAYER_RADIUS + GHOST_RADIUS) {
-            if (invulnerable > 0) continue;
-
-            if (frightened) {
-              ghost.eaten = true;
-
-              score += 200;
-              api.setScore(score);
-              api.sound("collect");
-
-              // Volta à posição original, sem manter o estado de captura.
+            if (ghost.respawnTimer <= 0) {
               ghost.x = ghost.startX;
               ghost.y = ghost.startY;
               ghost.dir = { x: 0, y: 0 };
-              ghost.timer = 0;
-              ghost.eaten = false;
+            }
+
+            continue;
+          }
+
+          const distance = ghost.speed * dt;
+          const steps = Math.max(1, Math.ceil(distance / 2));
+          const stepDt = dt / steps;
+
+          for (let step = 0; step < steps; step++) {
+            const info = nearTileCenter(ghost, 5);
+
+            if (info.near) {
+              ghost.x = info.center.x;
+              ghost.y = info.center.y;
+
+              const choices = getGhostChoices(ghost, info.tile);
+
+              ghost.dir = chooseGhostDirection(
+                ghost,
+                choices
+              );
+            }
+
+            const nx =
+              ghost.x + ghost.dir.x * ghost.speed * stepDt;
+            const ny =
+              ghost.y + ghost.dir.y * ghost.speed * stepDt;
+
+            if (isWalkable(nx, ny, GHOST_RADIUS)) {
+              ghost.x = nx;
+              ghost.y = ny;
             } else {
-              loseLife();
-              return;
+              const tile = tileAt(ghost.x, ghost.y);
+              const center = centerOf(tile.x, tile.y);
+
+              ghost.x = center.x;
+              ghost.y = center.y;
+              ghost.dir = { x: 0, y: 0 };
             }
           }
         }
       }
 
-      function loseLife() {
-        if (over) return;
+      // =========================================================
+      // COLISÕES
+      // =========================================================
+      function checkCollisions() {
+        if (invulnerable > 0 || over) return;
 
-        lives -= 1;
-        api.setLives(lives);
-        api.sound("hit");
+        for (const ghost of ghosts) {
+          if (ghost.respawnTimer > 0) continue;
 
-        if (lives <= 0) {
-          over = true;
-          api.end("Os fantasmas venceram desta vez.");
-          return;
+          const dx = player.x - ghost.x;
+          const dy = player.y - ghost.y;
+          const distance = Math.hypot(dx, dy);
+
+          if (distance >= PLAYER_RADIUS + GHOST_RADIUS) {
+            continue;
+          }
+
+          if (frightenedTimer > 0) {
+            score += 200;
+            updateScore();
+            safeSound("collect");
+
+            ghost.x = ghost.startX;
+            ghost.y = ghost.startY;
+            ghost.dir = { x: 0, y: 0 };
+            ghost.respawnTimer = 1.2;
+          } else {
+            lives--;
+            updateLives();
+            safeSound("hit");
+
+            if (lives <= 0) {
+              finishGame("Fim de jogo! Você perdeu todas as vidas.");
+              return;
+            }
+
+            // Reposiciona o jogador e concede invulnerabilidade.
+            player = createPlayer();
+            invulnerable = 2;
+
+            return;
+          }
         }
-
-        resetPositions();
       }
 
-      function drawWalls() {
+      // =========================================================
+      // DESENHO DO LABIRINTO
+      // =========================================================
+      function drawMap() {
+        ctx.fillStyle = COLORS.background;
+        ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+        // Paredes.
         for (const wall of walls) {
           const [x, y] = wall.split(",").map(Number);
           const px = x * TILE;
           const py = y * TILE;
 
-          ctx.fillStyle = "#121b4b";
-          ctx.fillRect(px + 1, py + 1, TILE - 2, TILE - 2);
+          ctx.fillStyle = COLORS.wall;
+          ctx.fillRect(px + 2, py + 2, TILE - 4, TILE - 4);
 
-          ctx.strokeStyle = "#1676cf";
-          ctx.lineWidth = 1.5;
+          ctx.strokeStyle = COLORS.wallGlow;
+          ctx.lineWidth = 1.2;
           ctx.strokeRect(px + 4, py + 4, TILE - 8, TILE - 8);
-
-          ctx.fillStyle = "#253d83";
-          ctx.fillRect(px + 6, py + 6, TILE - 12, 2);
         }
-      }
 
-      function drawDots() {
-        ctx.fillStyle = "#ffe6b3";
+        // Pontos normais.
+        ctx.fillStyle = COLORS.dot;
 
         for (const dot of dots) {
           const [x, y] = dot.split(",").map(Number);
+          const center = centerOf(x, y);
 
           ctx.beginPath();
-          ctx.arc(
-            x * TILE + TILE / 2,
-            y * TILE + TILE / 2,
-            3,
-            0,
-            Math.PI * 2
-          );
+          ctx.arc(center.x, center.y, 3, 0, Math.PI * 2);
           ctx.fill();
         }
 
+        // Superpontos.
         for (const dot of powerDots) {
           const [x, y] = dot.split(",").map(Number);
-          const pulse = 5 + Math.sin(gameTime * 5) * 1.5;
-
-          ctx.save();
-          ctx.shadowColor = "#ffe45c";
-          ctx.shadowBlur = 14;
-          ctx.fillStyle = "#ffe45c";
+          const center = centerOf(x, y);
 
           ctx.beginPath();
+          ctx.fillStyle = COLORS.power;
           ctx.arc(
-            x * TILE + TILE / 2,
-            y * TILE + TILE / 2,
-            pulse,
+            center.x,
+            center.y,
+            7 + Math.sin(gameTime * 5) * 1.5,
             0,
             Math.PI * 2
           );
           ctx.fill();
-
-          ctx.restore();
         }
       }
 
-      function drawGhost(ghost) {
-        const x = ghost.x;
-        const y = ghost.y;
-        const r = GHOST_RADIUS + 1;
-
-        ctx.save();
-
-        ctx.fillStyle = frightened ? "#5368ff" : ghost.color;
-
-        if (
-          frightened &&
-          ghostModeTimer < 2 &&
-          Math.floor(gameTime * 8) % 2
-        ) {
-          ctx.fillStyle = "#f5f5ff";
-        }
-
-        ctx.beginPath();
-        ctx.arc(x, y - 2, r, Math.PI, 0);
-        ctx.lineTo(x + r, y + r);
-        ctx.lineTo(x + r / 2, y + r - 4);
-        ctx.lineTo(x, y + r);
-        ctx.lineTo(x - r / 2, y + r - 4);
-        ctx.lineTo(x - r, y + r);
-        ctx.closePath();
-        ctx.fill();
-
-        // Olhos.
-        ctx.fillStyle = "#ffffff";
-        ctx.beginPath();
-        ctx.ellipse(x - 5, y - 2, 4, 5, 0, 0, Math.PI * 2);
-        ctx.ellipse(x + 5, y - 2, 4, 5, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = "#17172d";
-        ctx.beginPath();
-        ctx.arc(
-          x - 5 + ghost.dir.x * 1.5,
-          y - 2 + ghost.dir.y * 1.5,
-          2, 0, Math.PI * 2
-        );
-        ctx.arc(
-          x + 5 + ghost.dir.x * 1.5,
-          y - 2 + ghost.dir.y * 1.5,
-          2, 0, Math.PI * 2
-        );
-        ctx.fill();
-
-        ctx.restore();
-      }
-
+      // =========================================================
+      // DESENHO DO PAC-MAN
+      // =========================================================
       function drawPlayer() {
-        ctx.save();
-        ctx.translate(player.x, player.y);
+        if (
+          invulnerable > 0 &&
+          Math.floor(gameTime * 12) % 2 === 0
+        ) {
+          return;
+        }
 
         let angle = 0;
 
@@ -646,30 +754,21 @@
         if (player.dir.y === -1) angle = -Math.PI / 2;
         if (player.dir.y === 1) angle = Math.PI / 2;
 
+        const opening = mouth * 0.22;
+
+        ctx.save();
+        ctx.translate(player.x, player.y);
         ctx.rotate(angle);
 
-        if (
-          invulnerable > 0 &&
-          Math.floor(gameTime * 12) % 2 === 0
-        ) {
-          ctx.globalAlpha = 0.4;
-        }
-
-        ctx.fillStyle = "#ffdc45";
-        ctx.shadowColor = "#ffdc45";
-        ctx.shadowBlur = 10;
-
+        ctx.fillStyle = COLORS.player;
         ctx.beginPath();
-
-        const open = 0.12 + mouth * 0.42;
-
         ctx.moveTo(0, 0);
         ctx.arc(
           0,
           0,
-          PLAYER_RADIUS + 2,
-          open,
-          Math.PI * 2 - open
+          PLAYER_RADIUS,
+          opening * Math.PI,
+          (2 - opening) * Math.PI
         );
         ctx.closePath();
         ctx.fill();
@@ -677,224 +776,170 @@
         ctx.restore();
       }
 
-      function draw() {
-        const pixelRatio = window.devicePixelRatio || 1;
-        const displayWidth = canvas.clientWidth;
-        const displayHeight = canvas.clientHeight;
+      // =========================================================
+      // DESENHO DOS FANTASMAS
+      // =========================================================
+      function drawGhost(ghost) {
+        if (ghost.respawnTimer > 0) return;
 
-        // Ajusta a resolução interna sem distorcer o desenho.
-        if (
-          displayWidth > 0 &&
-          displayHeight > 0 &&
-          (
-            canvas.width !== Math.round(displayWidth * pixelRatio) ||
-            canvas.height !== Math.round(displayHeight * pixelRatio)
-          )
-        ) {
-          canvas.width = Math.round(displayWidth * pixelRatio);
-          canvas.height = Math.round(displayHeight * pixelRatio);
-        }
-
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        ctx.fillStyle = "#070717";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // Escala o mapa para o tamanho disponível no celular ou desktop.
-        const scale = Math.min(
-          canvas.width / WIDTH,
-          canvas.height / HEIGHT
-        );
-
-        const offsetX = (canvas.width - WIDTH * scale) / 2;
-        const offsetY = (canvas.height - HEIGHT * scale) / 2;
+        const x = ghost.x;
+        const y = ghost.y;
+        const r = GHOST_RADIUS;
 
         ctx.save();
-        ctx.translate(offsetX, offsetY);
-        ctx.scale(scale, scale);
 
-        drawWalls();
-        drawDots();
+        ctx.fillStyle =
+          frightenedTimer > 0 ? "#3158db" : ghost.color;
 
-        ghosts.forEach(drawGhost);
-        drawPlayer();
+        ctx.beginPath();
+        ctx.arc(x, y - 2, r, Math.PI, 0);
+        ctx.lineTo(x + r, y + r);
+
+        ctx.lineTo(x + r / 2, y + r - 4);
+        ctx.lineTo(x, y + r);
+        ctx.lineTo(x - r / 2, y + r - 4);
+        ctx.lineTo(x - r, y + r);
+
+        ctx.closePath();
+        ctx.fill();
+
+        if (frightenedTimer <= 0) {
+          ctx.fillStyle = "#ffffff";
+
+          ctx.beginPath();
+          ctx.ellipse(x - 4, y - 2, 3.5, 4.5, 0, 0, Math.PI * 2);
+          ctx.ellipse(x + 4, y - 2, 3.5, 4.5, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = "#15152b";
+
+          ctx.beginPath();
+          ctx.arc(x - 3, y - 1, 1.8, 0, Math.PI * 2);
+          ctx.arc(x + 5, y - 1, 1.8, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          ctx.strokeStyle = "#ffffff";
+          ctx.lineWidth = 1.5;
+
+          ctx.beginPath();
+          ctx.moveTo(x - 5, y + 2);
+          ctx.lineTo(x - 2, y + 4);
+          ctx.lineTo(x + 1, y + 2);
+          ctx.lineTo(x + 4, y + 4);
+          ctx.stroke();
+        }
 
         ctx.restore();
-
-        // HUD desenhado fora do mapa.
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.fillStyle = "#a6a6cf";
-        ctx.font = `${12 * pixelRatio}px monospace`;
-        ctx.textAlign = "left";
-
-        ctx.fillText(
-          `PONTOS: ${score}`,
-          12 * pixelRatio,
-          canvas.height - 12 * pixelRatio
-        );
-
-        ctx.textAlign = "right";
-        ctx.fillText(
-          frightened ? "POWER MODE" : "PAC-MAN",
-          canvas.width - 12 * pixelRatio,
-          canvas.height - 12 * pixelRatio
-        );
-
-        ctx.textAlign = "left";
       }
 
-      // Liga os botões direcionais da página ao jogo.
-      const touchButtons = Array.from(
-        document.querySelectorAll(".touch-controls [data-key]")
-      );
+      // =========================================================
+      // INTERFACE DO JOGO
+      // =========================================================
+      function drawHUD() {
+        ctx.fillStyle = COLORS.text;
+        ctx.font = "bold 13px monospace";
+        ctx.textBaseline = "top";
 
-      function onTouchControl(event) {
-        const direction = DIRECTIONS[event.currentTarget.dataset.key];
+        ctx.fillText("PAC-MAN", 10, 8);
+        ctx.fillText("PONTOS: " + score, 120, 8);
+        ctx.fillText("FASE: " + level, 280, 8);
+        ctx.fillText("VIDAS: " + lives, 400, 8);
 
-        if (!direction) {
-          // Espaço/AÇÃO não tem função no Pac-Man.
-          return;
+        if (paused && !over) {
+          drawOverlay("JOGO PAUSADO", "Pressione continuar para jogar");
         }
 
-        event.preventDefault();
-        setDirection(direction);
+        if (over) {
+          drawOverlay("FIM DE JOGO", "Pontuação: " + score);
+        }
       }
 
-      function onTouchControlKey(event) {
-        if (event.key !== "Enter" && event.key !== " ") return;
+      function drawOverlay(title, subtitle) {
+        ctx.fillStyle = "rgba(3, 5, 20, 0.78)";
+        ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-        const direction = DIRECTIONS[event.currentTarget.dataset.key];
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
 
-        if (!direction) return;
+        ctx.fillStyle = "#00e5ff";
+        ctx.font = "bold 32px monospace";
+        ctx.fillText(title, WIDTH / 2, HEIGHT / 2 - 18);
 
-        event.preventDefault();
-        setDirection(direction);
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "15px monospace";
+        ctx.fillText(subtitle, WIDTH / 2, HEIGHT / 2 + 20);
+
+        ctx.textAlign = "start";
+        ctx.textBaseline = "alphabetic";
       }
 
-      // Permite deslizar o dedo diretamente sobre o labirinto.
-      function onPointerDown(event) {
-        if (event.pointerType === "mouse") return;
-        if (event.target.closest(".touch-controls")) return;
+      function draw() {
+        drawMap();
 
-        swipeStart = {
-          x: event.clientX,
-          y: event.clientY
-        };
-
-        activePointer = event.pointerId;
-      }
-
-      function onPointerUp(event) {
-        if (!swipeStart || event.pointerId !== activePointer) return;
-
-        const dx = event.clientX - swipeStart.x;
-        const dy = event.clientY - swipeStart.y;
-        const threshold = 18;
-
-        if (Math.max(Math.abs(dx), Math.abs(dy)) >= threshold) {
-          if (Math.abs(dx) > Math.abs(dy)) {
-            setDirection(
-              dx > 0 ? DIRECTIONS.ArrowRight : DIRECTIONS.ArrowLeft
-            );
-          } else {
-            setDirection(
-              dy > 0 ? DIRECTIONS.ArrowDown : DIRECTIONS.ArrowUp
-            );
-          }
+        if (player) {
+          drawPlayer();
         }
 
-        swipeStart = null;
-        activePointer = null;
+        ghosts.forEach(drawGhost);
+        drawHUD();
       }
 
-      function onPointerCancel() {
-        swipeStart = null;
-        activePointer = null;
-      }
-
+      // =========================================================
+      // LOOP PRINCIPAL
+      // =========================================================
       function loop(time) {
         if (destroyed) return;
 
-        if (over) {
-          draw();
-          return;
-        }
+        const dt = Math.min(
+          (time - (last || time)) / 1000,
+          0.02
+        );
 
-        const dt = Math.min((time - (last || time)) / 1000, 0.02);
         last = time;
 
-        if (!paused) {
+        if (!paused && !over) {
           gameTime += dt;
 
-          if (invulnerable > 0) {
-            invulnerable = Math.max(0, invulnerable - dt);
-          }
-
-          if (frightened) {
-            ghostModeTimer -= dt;
-
-            if (ghostModeTimer <= 0) {
-              frightened = false;
-              ghostModeTimer = 0;
-            }
-          }
+          invulnerable = Math.max(0, invulnerable - dt);
+          frightenedTimer = Math.max(0, frightenedTimer - dt);
 
           movePlayer(dt);
 
           if (!over) {
             moveGhosts(dt);
+            checkCollisions();
           }
         }
 
         draw();
-        raf = requestAnimationFrame(loop);
+
+        if (!destroyed) {
+          raf = requestAnimationFrame(loop);
+        }
       }
 
-      function removeListeners() {
-        window.removeEventListener("keydown", onKeyDown);
+      // =========================================================
+      // INICIALIZAÇÃO
+      // =========================================================
+      resetGame();
 
-        touchButtons.forEach(button => {
-          button.removeEventListener("pointerdown", onTouchControl);
-          button.removeEventListener("keydown", onTouchControlKey);
-        });
-
-        canvas.removeEventListener("pointerdown", onPointerDown);
-        window.removeEventListener("pointerup", onPointerUp);
-        window.removeEventListener("pointercancel", onPointerCancel);
-      }
-
-      // Inicialização.
-      buildMap();
-      resetPositions();
-
-      score = 0;
-      lives = 3;
-
-      api.setScore(score);
-      api.setLives(lives);
-      api.setLevel(1);
-
-      window.addEventListener("keydown", onKeyDown, { passive: false });
+      // Capture ajuda a garantir que as setas sejam recebidas
+      // mesmo se outro elemento da página tratar o teclado.
+      window.addEventListener("keydown", onKey, true);
 
       touchButtons.forEach(button => {
-        button.addEventListener("pointerdown", onTouchControl, {
-          passive: false
-        });
-
-        button.addEventListener("keydown", onTouchControlKey);
+        button.addEventListener("click", onTouchControl);
       });
 
-      canvas.addEventListener("pointerdown", onPointerDown);
-      window.addEventListener("pointerup", onPointerUp);
-      window.addEventListener("pointercancel", onPointerCancel);
-
-      draw();
       raf = requestAnimationFrame(loop);
 
+      // =========================================================
+      // CONTROLES DO SISTEMA ARCADE
+      // =========================================================
       return {
         pause() {
           paused = true;
+          player.dir = { x: 0, y: 0 };
         },
 
         resume() {
@@ -906,8 +951,14 @@
 
         destroy() {
           destroyed = true;
+
           cancelAnimationFrame(raf);
-          removeListeners();
+
+          window.removeEventListener("keydown", onKey, true);
+
+          touchButtons.forEach(button => {
+            button.removeEventListener("click", onTouchControl);
+          });
         }
       };
     }
