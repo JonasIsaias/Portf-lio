@@ -1,0 +1,233 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090914">
+  <meta name="description" content="Jonas Arcade — jogos clássicos em pixel art.">
+  <title>Jonas Arcade | Retro Gaming</title>
+
+  <link rel="stylesheet" href="css/game.css">
+</head>
+<body>
+  <div class="arcade-shell">
+    <header class="topbar">
+      <a class="brand" href="index.html">
+        <span class="brand-icon">J<span>A</span></span>
+        <span>
+          <strong>JONAS ARCADE</strong>
+          <small>RETRO GAMING SYSTEM</small>
+        </span>
+      </a>
+
+      <nav class="top-actions">
+        <a class="nav-link" href="index.html">← Portfólio</a>
+        <button id="soundToggle" class="icon-button" type="button"
+                aria-pressed="false" title="Ativar ou desativar som">
+          ♪ SOM: OFF
+        </button>
+      </nav>
+    </header>
+
+    <section class="intro">
+      <p class="eyebrow">INSERT COIN · SELECT YOUR GAME</p>
+      <h1>PRESS <span>START</span></h1>
+      <p class="intro-text">
+        Clássicos dos fliperamas, agora no meu universo digital.
+      </p>
+    </section>
+
+    <main>
+      <section class="game-library" aria-label="Seleção de jogos">
+        <button class="game-card active" type="button"
+                data-game="pacman" aria-pressed="true">
+          <span class="game-art art-pacman">
+            <span class="pixel-pac">◕</span>
+            <span class="pixel-dot">· · · ·</span>
+          </span>
+          <span class="game-card-info">
+            <strong>PAC-MAN</strong>
+            <small>MAZE RUNNER</small>
+          </span>
+          <span class="game-arrow">↗</span>
+        </button>
+
+        <button class="game-card" type="button"
+                data-game="tetris" aria-pressed="false">
+          <span class="game-art art-tetris">
+            <span class="block block-cyan"></span>
+            <span class="block block-pink"></span>
+            <span class="block block-yellow"></span>
+            <span class="block block-purple"></span>
+          </span>
+          <span class="game-card-info">
+            <strong>TETRIS</strong>
+            <small>BLOCK PUZZLE</small>
+          </span>
+          <span class="game-arrow">↗</span>
+        </button>
+
+        <button class="game-card" type="button"
+                data-game="snake" aria-pressed="false">
+          <span class="game-art art-snake">
+            <span class="snake-pixel">■ ■ ■<br>　　■ ■</span>
+            <span class="snake-food">●</span>
+          </span>
+          <span class="game-card-info">
+            <strong>SNAKE</strong>
+            <small>PIXEL SURVIVAL</small>
+          </span>
+          <span class="game-arrow">↗</span>
+        </button>
+
+        <button class="game-card" type="button"
+                data-game="invaders" aria-pressed="false">
+          <span class="game-art art-invaders">
+            <span>⌁ ⌁ ⌁</span>
+            <span>⌁ ⌁ ⌁</span>
+            <span class="invader-ship">▲</span>
+          </span>
+          <span class="game-card-info">
+            <strong>SPACE INVADERS</strong>
+            <small>GALAXY DEFENDER</small>
+          </span>
+          <span class="game-arrow">↗</span>
+        </button>
+      </section>
+
+      <section class="arcade-layout">
+        <div class="game-column">
+          <div class="screen-heading">
+            <div>
+              <p class="eyebrow">NOW PLAYING</p>
+              <h2 id="gameTitle">PAC-MAN</h2>
+            </div>
+            <span id="gameStatus" class="status-pill">READY</span>
+          </div>
+
+          <div class="game-machine">
+            <div class="screen-frame">
+              <canvas id="gameCanvas" width="720" height="540"
+                      aria-label="Área do jogo"></canvas>
+
+              <div id="startOverlay" class="screen-overlay">
+                <div class="overlay-content">
+                  <span class="overlay-symbol">▶</span>
+                  <p class="eyebrow">ARCADE SYSTEM READY</p>
+                  <h3 id="overlayTitle">PRONTO PARA JOGAR?</h3>
+                  <p id="overlayText">
+                    Pressione iniciar para começar sua partida.
+                  </p>
+                  <button id="startGame" class="primary-button" type="button">
+                    ▶ INICIAR JOGO
+                  </button>
+                </div>
+              </div>
+
+              <div id="pauseOverlay" class="screen-overlay is-hidden">
+                <div class="overlay-content">
+                  <span class="overlay-symbol">Ⅱ</span>
+                  <p class="eyebrow">GAME PAUSED</p>
+                  <h3>JOGO PAUSADO</h3>
+                  <p>Respire. A próxima fase espera por você.</p>
+                  <button id="resumeGame" class="primary-button" type="button">
+                    CONTINUAR
+                  </button>
+                </div>
+              </div>
+
+              <div id="endOverlay" class="screen-overlay is-hidden">
+                <div class="overlay-content">
+                  <span class="overlay-symbol">★</span>
+                  <p class="eyebrow">SESSION COMPLETE</p>
+                  <h3 id="endTitle">FIM DE JOGO</h3>
+                  <p id="endText">Sua partida terminou.</p>
+                  <button id="restartGame" class="primary-button" type="button">
+                    ↻ JOGAR NOVAMENTE
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="machine-footer">
+              <span>JA-198X</span>
+              <span class="machine-lights">
+                <i></i><i></i><i></i>
+              </span>
+              <span>PLAYER 01</span>
+            </div>
+          </div>
+
+          <div class="touch-controls" aria-label="Controles direcionais">
+            <button type="button" data-key="ArrowUp" aria-label="Cima">▲</button>
+            <div>
+              <button type="button" data-key="ArrowLeft" aria-label="Esquerda">◀</button>
+              <button type="button" data-key="ArrowDown" aria-label="Baixo">▼</button>
+              <button type="button" data-key="ArrowRight" aria-label="Direita">▶</button>
+            </div>
+            <button type="button" data-key=" " aria-label="Ação ou disparo">● AÇÃO</button>
+          </div>
+        </div>
+
+        <aside class="sidebar">
+          <section class="info-panel">
+            <p class="eyebrow">PLAYER STATISTICS</p>
+            <div class="score-number">
+              <span id="scoreValue">000000</span>
+              <small>SCORE</small>
+            </div>
+
+            <div class="stat-row">
+              <span>RECORDE</span>
+              <strong id="bestValue">000000</strong>
+            </div>
+            <div class="stat-row">
+              <span>VIDAS</span>
+              <strong id="livesValue">03</strong>
+            </div>
+            <div class="stat-row">
+              <span>NÍVEL</span>
+              <strong id="levelValue">01</strong>
+            </div>
+          </section>
+
+          <section class="info-panel">
+            <p class="eyebrow">CONTROLES</p>
+            <div class="control-row"><span>Movimento</span><kbd>W A S D</kbd></div>
+            <div class="control-row"><span>Movimento</span><kbd>← ↑ → ↓</kbd></div>
+            <div class="control-row"><span>Ação / disparo</span><kbd>ESPAÇO</kbd></div>
+            <div class="control-row"><span>Pausar</span><kbd>ESC</kbd></div>
+            <p id="controlHint" class="muted-note">
+              Colete os pontos e evite os fantasmas.
+            </p>
+          </section>
+
+          <section class="info-panel achievement-panel">
+            <p class="eyebrow">ARCADE PROFILE</p>
+            <div class="profile-mark">JA</div>
+            <strong>JONAS ISAIAS</strong>
+            <small>PLAYER · DEVELOPER · EXPLORER</small>
+            <div class="achievement-line">
+              <span>JOGOS DISPONÍVEIS</span>
+              <strong>04</strong>
+            </div>
+          </section>
+        </aside>
+      </section>
+    </main>
+
+    <footer class="page-footer">
+      <span>© JONAS ISAIAS</span>
+      <span>BUILT WITH PIXELS & PASSION</span>
+      <span>ARCADE SYSTEM v1.0</span>
+    </footer>
+  </div>
+
+  <script src="js/pacman.js"></script>
+  <script src="js/tetris.js"></script>
+  <script src="js/snake.js"></script>
+  <script src="js/space-invaders.js"></script>
+  <script src="js/arcade.js"></script>
+</body>
+</html>
