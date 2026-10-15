@@ -1,4 +1,3 @@
-
 (() => {
   "use strict";
 
@@ -296,6 +295,7 @@
           y: position.y,
           dir: { x: 0, y: 0 },
           next: { x: 0, y: 0 },
+          lastCenterKey: null,
           speed: PLAYER_SPEED
         };
       }
@@ -309,6 +309,7 @@
           startX: position.x,
           startY: position.y,
           dir: { x: 0, y: 0 },
+          lastCenterKey: null,
           speed: GHOST_SPEED,
           color,
           personality,
@@ -446,80 +447,102 @@
       // =========================================================
       // MOVIMENTAÇÃO DO PAC-MAN
       // =========================================================
+      
       function movePlayer(dt) {
         const distance = player.speed * dt;
         const steps = Math.max(1, Math.ceil(distance / 2));
         const stepDt = dt / steps;
-
+      
         for (let step = 0; step < steps; step++) {
           const info = nearTileCenter(player);
-
+      
           if (info.near) {
-            // Alinha o personagem ao centro da célula.
-            player.x = info.center.x;
-            player.y = info.center.y;
-
-            // Prioriza a direção solicitada pelo jogador.
+            const centerKey = keyOf(info.tile.x, info.tile.y);
+            const isNewCenter = player.lastCenterKey !== centerKey;
+      
+            const wantsTurn =
+              player.next.x !== player.dir.x ||
+              player.next.y !== player.dir.y;
+      
+            // Só alinha o personagem quando precisa mudar de direção,
+            // iniciar parado ou tratar um novo centro de corredor.
             if (
-              canMoveFromTile(
+              isNewCenter ||
+              (wantsTurn && canMoveFromTile(
                 info.tile.x,
                 info.tile.y,
                 player.next
-              )
+              )) ||
+              (!player.dir.x && !player.dir.y)
             ) {
-              player.dir = { ...player.next };
-            }
-
-            // Para se a direção atual estiver bloqueada.
-            if (
-              !canMoveFromTile(
-                info.tile.x,
-                info.tile.y,
-                player.dir
-              )
-            ) {
-              player.dir = { x: 0, y: 0 };
+              if (
+                canMoveFromTile(
+                  info.tile.x,
+                  info.tile.y,
+                  player.next
+                ) &&
+                (
+                  wantsTurn ||
+                  (!player.dir.x && !player.dir.y)
+                )
+              ) {
+                player.x = info.center.x;
+                player.y = info.center.y;
+                player.dir = { ...player.next };
+              } else if (
+                isNewCenter &&
+                !canMoveFromTile(
+                  info.tile.x,
+                  info.tile.y,
+                  player.dir
+                )
+              ) {
+                player.x = info.center.x;
+                player.y = info.center.y;
+                player.dir = { x: 0, y: 0 };
+              }
+      
+              player.lastCenterKey = centerKey;
             }
           }
-
+      
           if (!player.dir.x && !player.dir.y) {
             break;
           }
-
+      
           const nx =
             player.x + player.dir.x * player.speed * stepDt;
-
+      
           const ny =
             player.y + player.dir.y * player.speed * stepDt;
-
+      
           if (isWalkable(nx, ny, PLAYER_RADIUS)) {
             player.x = nx;
             player.y = ny;
           } else {
-            // Impede a passagem pelas paredes.
             const current = tileAt(player.x, player.y);
             const center = centerOf(current.x, current.y);
-
+      
             if (player.dir.x !== 0) {
               player.x = center.x;
             }
-
+      
             if (player.dir.y !== 0) {
               player.y = center.y;
             }
-
+      
             player.dir = { x: 0, y: 0 };
+            player.lastCenterKey = null;
             break;
           }
-
+      
           collectItems();
-
+      
           if (over) return;
         }
-
-        // Animação da boca.
+      
         mouth += dt * 11 * mouthDir;
-
+      
         if (mouth > 1) {
           mouth = 1;
           mouthDir = -1;
@@ -628,18 +651,25 @@
             const info = nearTileCenter(ghost, 5);
 
             if (info.near) {
-              ghost.x = info.center.x;
-              ghost.y = info.center.y;
-
-              const choices = getGhostChoices(
-                ghost,
-                info.tile
-              );
-
-              ghost.dir = chooseGhostDirection(
-                ghost,
-                choices
-              );
+              const centerKey = keyOf(info.tile.x, info.tile.y);
+            
+              // Decide a direção apenas uma vez por centro de célula.
+              if (ghost.lastCenterKey !== centerKey) {
+                ghost.x = info.center.x;
+                ghost.y = info.center.y;
+            
+                const choices = getGhostChoices(
+                  ghost,
+                  info.tile
+                );
+            
+                ghost.dir = chooseGhostDirection(
+                  ghost,
+                  choices
+                );
+            
+                ghost.lastCenterKey = centerKey;
+              }
             }
 
             const nx =
@@ -658,6 +688,7 @@
               ghost.x = center.x;
               ghost.y = center.y;
               ghost.dir = { x: 0, y: 0 };
+              ghost.lastCenterKey = null;
             }
           }
         }
