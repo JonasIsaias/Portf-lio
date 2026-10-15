@@ -1,57 +1,497 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Portfólio Jonas Isaias</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090b14">
+  <meta name="description" content="Portfólio de Jonas Isaias — desenvolvedor de software com foco em Python, Java, aplicações web, automação e tecnologia.">
+  <meta name="author" content="Jonas Isaias">
+  <meta name="color-scheme" content="dark">
+
+  <title>Jonas Isaias | Desenvolvedor de Software</title>
+
+  <!-- Fontes -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800&family=Share+Tech+Mono&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Ícones -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-  <!-- AOS CSS -->
-  <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet" />
+  <!-- Estilos principais -->
+  <link rel="stylesheet" href="style.css">
 
-  <!-- CSS -->
-  <link rel="stylesheet" href="style.css" />
+  <!-- Ícone da página: substitua pelo arquivo, caso já tenha um -->
+  <link rel="icon" href="img/favicon.png" type="image/png">
 </head>
+
 <body>
+  <!-- Tela de inicialização -->
+  <div class="boot-screen" id="bootScreen" aria-hidden="true">
+    <div class="boot-content">
+      <div class="boot-logo">JI<span>_</span></div>
+      <p>INITIALIZING DIGITAL EXPERIENCE</p>
 
-  <canvas id="canvas" aria-hidden="true"></canvas>
-  <canvas id="stars" aria-hidden="true"></canvas>
-
-  <!-- Nebulosas -->
-  <img src="img/Orion_Nebula_-_Hubble_2006.jpg" class="nebulosa" alt="" />
-  <img src="img/Nebulosa1.jpg" class="nebulosa" alt="" />
-  <img src="img/Orion_Nebula_-_Hubble_2006.jpg" class="nebulosa" alt="" />
-
-  <div class="container">
-    <header class="hero">
-      <img src="img/foto-perfil.jpg" alt="Foto de Jonas Isaias" class="foto-perfil" />
-      <h1 class="texto-animado">
-        <span id="texto-animado"></span><span class="cursor">|</span>
-      </h1>
-
-      <a href="sobre.html" id="btn-saber-mais" class="botao-link">Saber mais</a>
-    </header>
-
-    <footer class="rodape">
-      <p>&copy; 2025 Jonas Isaias. Todos os direitos reservados.</p>
-      <div class="social-links">
-        <a href="https://linkedin.com/in/jonas-isaias-3a02ba293" target="_blank" rel="noopener" aria-label="LinkedIn">
-          <i class="fab fa-linkedin-in"></i>
-        </a>
-        <a href="https://github.com/JonasIsaias" target="_blank" rel="noopener" aria-label="GitHub">
-          <i class="fab fa-github"></i>
-        </a>
+      <div class="boot-track" aria-hidden="true">
+        <span></span>
       </div>
-    </footer>
 
+      <p class="boot-status" id="bootStatus">LOADING SYSTEM...</p>
+    </div>
   </div>
 
-  <!-- AOS JS -->
-  <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
-  <script>AOS.init();</script>
+  <!-- Elementos visuais de fundo -->
+  <canvas id="stars" aria-hidden="true"></canvas>
+  <canvas id="canvas" aria-hidden="true"></canvas>
+  <div class="scanlines" aria-hidden="true"></div>
+  <div class="screen-vignette" aria-hidden="true"></div>
+
+  <!-- Cabeçalho -->
+  <header class="site-header">
+    <a class="brand" href="index.html" aria-label="Jonas Isaias — página inicial">
+      <span class="brand-icon" aria-hidden="true">JI<span>_</span></span>
+      <span class="brand-name">JONAS<span>ISAIAS</span></span>
+    </a>
+
+    <a href="jogo.html" class="nav-link">
+      Arcade <span aria-hidden="true">▸</span>
+    </a>
+
+    <button
+      class="menu-toggle"
+      id="menuToggle"
+      type="button"
+      aria-label="Abrir menu"
+      aria-controls="siteNav"
+      aria-expanded="false"
+    >
+      <i class="fa-solid fa-bars" aria-hidden="true"></i>
+    </button>
+
+    <nav class="site-nav" id="siteNav" aria-label="Navegação principal">
+      <a href="index.html" class="active" aria-current="page">
+        <span>00.</span> INÍCIO
+      </a>
+      <a href="sobre.html">
+        <span>01.</span> SOBRE
+      </a>
+      <a href="projetos.html">
+        <span>02.</span> PROJETOS
+      </a>
+      <a href="contato.html">
+        <span>03.</span> CONTATO
+      </a>
+    </nav>
+
+    <button
+      class="sound-toggle"
+      id="soundToggle"
+      type="button"
+      aria-pressed="false"
+      aria-label="Ativar ou desativar efeitos sonoros"
+    >
+      <i class="fa-solid fa-volume-xmark" aria-hidden="true"></i>
+      <span>SOM OFF</span>
+    </button>
+  </header>
+
+  <main id="conteudo">
+    <!-- Hero -->
+    <section class="hero section-shell" aria-labelledby="heroTitle">
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <div class="system-label">
+            <span class="status-dot" aria-hidden="true"></span>
+            SISTEMA ONLINE
+            <span class="label-divider">/</span>
+            PORTFÓLIO V2.0
+          </div>
+
+          <p class="eyebrow">BEM-VINDO AO MEU UNIVERSO DIGITAL</p>
+
+          <h1 class="hero-title" id="heroTitle">
+            JONAS<br>
+            <span>ISAIAS<span class="title-cursor" aria-hidden="true">_</span></span>
+          </h1>
+
+          <div class="role-line" aria-label="Desenvolvedor de software">
+            <span class="role-prefix" aria-hidden="true">&gt;</span>
+            <span id="texto-animado">Desenvolvedor de software.</span>
+            <span class="typing-cursor" aria-hidden="true">▋</span>
+          </div>
+
+          <p class="hero-description">
+            Transformo ideias em soluções digitais por meio de código,
+            automação e tecnologia. Gosto de resolver problemas reais
+            e construir experiências que fazem a diferença.
+          </p>
+
+          <div class="hero-actions">
+            <a href="projetos.html" class="btn btn-primary sound-action">
+              <i class="fa-solid fa-gamepad" aria-hidden="true"></i>
+              EXPLORAR PROJETOS
+            </a>
+
+            <a href="sobre.html" class="btn btn-outline sound-action">
+              <i class="fa-solid fa-terminal" aria-hidden="true"></i>
+              CONHECER O PLAYER
+            </a>
+          </div>
+
+          <div class="hero-socials" aria-label="Redes profissionais">
+            <a
+              href="https://github.com/JonasIsaias"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="GitHub — abrir em nova aba"
+            >
+              <i class="fa-brands fa-github" aria-hidden="true"></i>
+            </a>
+
+            <a
+              href="https://linkedin.com/in/jonas-isaias-3a02ba293"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="LinkedIn — abrir em nova aba"
+            >
+              <i class="fa-brands fa-linkedin-in" aria-hidden="true"></i>
+            </a>
+
+            <span class="social-caption">CONECTE-SE AO MEU UNIVERSO</span>
+          </div>
+        </div>
+
+        <!-- Painel de perfil -->
+        <div class="hero-visual" role="group" aria-label="Painel digital de perfil">
+          <div class="orbit orbit-one" aria-hidden="true"></div>
+          <div class="orbit orbit-two" aria-hidden="true"></div>
+
+          <div class="profile-frame">
+            <div class="frame-top">
+              <span>PLAYER PROFILE</span>
+              <span class="frame-live">
+                <i class="fa-solid fa-circle" aria-hidden="true"></i>
+                LIVE
+              </span>
+            </div>
+
+            <div class="profile-image-wrap">
+              <img
+                src="img/foto-perfil.jpg"
+                alt="Foto de Jonas Isaias"
+                class="profile-image"
+                loading="eager"
+                decoding="async"
+                onerror="this.hidden=true;this.nextElementSibling.hidden=false;"
+              >
+
+              <div class="profile-fallback" aria-hidden="true" hidden>
+                JI<span>_</span>
+              </div>
+
+              <div class="image-corner corner-tl" aria-hidden="true"></div>
+              <div class="image-corner corner-tr" aria-hidden="true"></div>
+              <div class="image-corner corner-bl" aria-hidden="true"></div>
+              <div class="image-corner corner-br" aria-hidden="true"></div>
+              <div class="image-scan" aria-hidden="true"></div>
+            </div>
+
+            <div class="profile-info">
+              <div>
+                <span class="micro-label">IDENTIDADE</span>
+                <strong>JONAS ISAIAS</strong>
+              </div>
+              <span class="level-tag">DEV / 001</span>
+            </div>
+
+            <div class="profile-divider" aria-hidden="true"></div>
+
+            <div class="skill-heading">
+              <span>SKILL MATRIX</span>
+              <span>CORE MODULES</span>
+            </div>
+
+            <div class="skill-chip-list" aria-label="Principais competências">
+              <span>PYTHON</span>
+              <span>JAVA</span>
+              <span>JAVASCRIPT</span>
+              <span>SQL</span>
+              <span>AUTOMAÇÃO</span>
+            </div>
+
+            <div class="profile-footer">
+              <span>
+                <i class="fa-solid fa-microchip" aria-hidden="true"></i>
+                SYSTEM READY
+              </span>
+              <span>BUILD 2026.10</span>
+            </div>
+          </div>
+
+          <div class="floating-chip chip-top" aria-hidden="true">
+            <i class="fa-solid fa-code"></i> CODE MODE
+          </div>
+
+          <div class="floating-chip chip-bottom" aria-hidden="true">
+            <span class="status-dot"></span> ALWAYS LEARNING
+          </div>
+
+          <div class="visual-coordinate" aria-hidden="true">
+            LAT 01.001 / DEV
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-bottom">
+        <span>
+          <i class="fa-solid fa-arrow-down" aria-hidden="true"></i>
+          ROLE PARA EXPLORAR
+        </span>
+
+        <span class="hero-bottom-center">DESIGN. CODE. EVOLVE.</span>
+
+        <span>
+          BR <span class="coordinate-dot" aria-hidden="true">◆</span>
+          DIGITAL WORLD
+        </span>
+      </div>
+    </section>
+
+    <!-- Áreas de atuação -->
+    <section class="intro-strip section-shell" aria-label="Áreas de atuação">
+      <div class="intro-item">
+        <span class="intro-number">01</span>
+        <div>
+          <strong>DESENVOLVIMENTO</strong>
+          <p>Aplicações e soluções web</p>
+        </div>
+      </div>
+
+      <div class="intro-item">
+        <span class="intro-number">02</span>
+        <div>
+          <strong>AUTOMAÇÃO</strong>
+          <p>Menos tarefas repetitivas</p>
+        </div>
+      </div>
+
+      <div class="intro-item">
+        <span class="intro-number">03</span>
+        <div>
+          <strong>RESOLUÇÃO</strong>
+          <p>Tecnologia com propósito</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Projetos em destaque -->
+    <section class="section-shell featured-section" aria-labelledby="featuredTitle">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">
+            <span class="heading-symbol" aria-hidden="true">[</span>
+            MISSION SELECT
+            <span class="heading-symbol" aria-hidden="true">]</span>
+          </p>
+
+          <h2 id="featuredTitle">
+            Projetos em <span class="text-gradient">destaque</span>
+          </h2>
+        </div>
+
+        <a href="projetos.html" class="text-link">
+          VER TODAS AS MISSÕES
+          <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+        </a>
+      </div>
+
+      <div class="project-grid">
+        <article class="project-card">
+          <div class="project-card-top">
+            <span class="project-index">MISSION_001</span>
+            <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>
+          </div>
+
+          <div class="project-icon" aria-hidden="true">
+            <i class="fa-solid fa-gears"></i>
+          </div>
+
+          <h3>Automação de processos</h3>
+
+          <p>
+            Ferramentas para simplificar rotinas, reduzir tarefas manuais
+            e tornar os fluxos de trabalho mais eficientes.
+          </p>
+
+          <div class="project-tags" aria-label="Tecnologias">
+            <span>PYTHON</span>
+            <span>AUTOMAÇÃO</span>
+          </div>
+
+          <a href="projetos.html" class="card-link">
+            EXPLORAR MISSÃO
+            <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+          </a>
+        </article>
+
+        <article class="project-card project-card-featured">
+          <div class="project-card-top">
+            <span class="project-index">MISSION_002</span>
+            <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>
+          </div>
+
+          <div class="project-icon" aria-hidden="true">
+            <i class="fa-solid fa-chart-line"></i>
+          </div>
+
+          <h3>Dados &amp; inteligência</h3>
+
+          <p>
+            Dashboards e ferramentas analíticas que organizam informações
+            e apoiam decisões com mais clareza.
+          </p>
+
+          <div class="project-tags" aria-label="Tecnologias">
+            <span>PYTHON</span>
+            <span>DATA</span>
+            <span>WEB</span>
+          </div>
+
+          <a href="projetos.html" class="card-link">
+            EXPLORAR MISSÃO
+            <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+          </a>
+        </article>
+
+        <article class="project-card">
+          <div class="project-card-top">
+            <span class="project-index">MISSION_003</span>
+            <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>
+          </div>
+
+          <div class="project-icon" aria-hidden="true">
+            <i class="fa-solid fa-laptop-code"></i>
+          </div>
+
+          <h3>Aplicações web</h3>
+
+          <p>
+            Interfaces responsivas e aplicações que combinam
+            funcionalidade, usabilidade e identidade visual.
+          </p>
+
+          <div class="project-tags" aria-label="Tecnologias">
+            <span>HTML</span>
+            <span>CSS</span>
+            <span>JAVASCRIPT</span>
+          </div>
+
+          <a href="projetos.html" class="card-link">
+            EXPLORAR MISSÃO
+            <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+          </a>
+        </article>
+      </div>
+    </section>
+
+    <!-- Terminal de apresentação -->
+    <section class="terminal-section section-shell" aria-labelledby="terminalTitle">
+      <div class="terminal-window">
+        <div class="terminal-bar">
+          <div class="terminal-lights" aria-hidden="true">
+            <i></i><i></i><i></i>
+          </div>
+
+          <span>jonas@digital-world: ~/about</span>
+
+          <i class="fa-solid fa-terminal terminal-bar-icon" aria-hidden="true"></i>
+        </div>
+
+        <div class="terminal-content">
+          <p>
+            <span class="terminal-green">jonas@portfolio</span>:<span class="terminal-purple">~</span>$ whoami
+          </p>
+
+          <h2 id="terminalTitle">
+            Curiosidade para explorar.<br>
+            <span>Código para construir.</span>
+          </h2>
+
+          <p class="terminal-muted">
+            Acredito que boas soluções começam com boas perguntas.
+            Cada desafio é uma oportunidade para aprender, experimentar
+            e desenvolver algo melhor.
+          </p>
+
+          <a href="sobre.html" class="btn btn-terminal sound-action">
+            ./conhecer-mais
+            <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Chamada para contato -->
+    <section class="contact-cta section-shell" aria-labelledby="contactCtaTitle">
+      <div class="cta-decoration" aria-hidden="true">LET'S BUILD SOMETHING</div>
+
+      <p class="eyebrow">PRÓXIMA FASE</p>
+
+      <h2 id="contactCtaTitle">
+        Tem um desafio interessante<span class="text-gradient">?</span>
+      </h2>
+
+      <p>
+        Vamos conversar sobre ideias, tecnologia e soluções
+        que valem a pena construir.
+      </p>
+
+      <a href="contato.html" class="btn btn-primary sound-action">
+        <i class="fa-regular fa-paper-plane" aria-hidden="true"></i>
+        INICIAR CONEXÃO
+      </a>
+    </section>
+  </main>
+
+  <!-- Rodapé -->
+  <footer class="site-footer">
+    <a class="footer-brand" href="index.html" aria-label="Voltar ao início">
+      JI<span>_</span>
+    </a>
+
+    <p>
+      © <span class="current-year">2026</span>
+      JONAS ISAIAS. TODOS OS DIREITOS RESERVADOS.
+    </p>
+
+    <div class="footer-socials" aria-label="Links e navegação">
+      <a
+        href="https://github.com/JonasIsaias"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="GitHub — abrir em nova aba"
+      >
+        <i class="fa-brands fa-github" aria-hidden="true"></i>
+      </a>
+
+      <a
+        href="https://linkedin.com/in/jonas-isaias-3a02ba293"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="LinkedIn — abrir em nova aba"
+      >
+        <i class="fa-brands fa-linkedin-in" aria-hidden="true"></i>
+      </a>
+
+      <a href="#conteudo" class="back-to-top" aria-label="Voltar ao topo">
+        <i class="fa-solid fa-arrow-up" aria-hidden="true"></i>
+      </a>
+    </div>
+  </footer>
 
   <!-- Scripts -->
-  <script src="js/particles.js"></script>
-  <script src="js/main.js"></script>
+  <script src="js/particles.js" defer></script>
+  <script src="js/effects.js" defer></script>
+  <script src="js/main.js" defer></script>
 </body>
 </html>
